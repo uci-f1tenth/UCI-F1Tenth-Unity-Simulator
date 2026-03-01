@@ -14,6 +14,8 @@ public class CarControl : MonoBehaviour
     public float steeringRange = 30f;
     public float steeringSpeedDeg = 600.0f;
 
+    public CheckpointManager checkpointManager;
+
     private WheelControl[] wheels;
     private Rigidbody rigidBody;
     private CarInputActions carControls;
@@ -89,7 +91,7 @@ public class CarControl : MonoBehaviour
             wheel.WheelCollider.brakeTorque = (Mathf.Abs(vInput) < 0.01f) ? brakeTorque : 0.0f;
         }
 
-        if (Vector3.Dot(transform.up, Vector3.up) < 0.5f) ResetCar();
+        if (Vector3.Dot(transform.up, Vector3.up) < 0.5f) checkpointManager.TeleportToLastCheckpoint(rigidBody);
     }
 
     public void ResetCar()

@@ -14,10 +14,9 @@ public class InfoPanelUpdater : MonoBehaviour
     private int lastTicksA, lastTicksB, lastLaps;
     private Vector3 lastImu, lastAngAccel, lastLinAccel;
 
-    private float uiRefreshTimer = 0.2f; // Only update text 5 times a second for efficiency
+    private float uiRefreshTimer = 0.2f;
     private const float EPSILON = 0.005f;
 
-    // This runs only when the script/object is active
     void Update()
     {
         if (DataBridge.Instance == null) return;
@@ -39,7 +38,7 @@ public class InfoPanelUpdater : MonoBehaviour
         // 1. Performance
         UpdateText(upsVal, db.ups.ToString("F0"));
 
-        // 2. Telemetry & Sensors (Dirty Checked)
+        // 2. Telemetry & Sensors
         UpdateIfChanged(ref lastSpeed, db.speedMS, speedVal, "F1");
         UpdateIfChanged(ref lastThrottle, db.throttle, throttleVal, "F2");
         UpdateIfChanged(ref lastSteer, db.steering, steerVal, "F2");
@@ -69,8 +68,21 @@ public class InfoPanelUpdater : MonoBehaviour
 
     private string FormatTime(float seconds)
     {
-        TimeSpan t = TimeSpan.FromSeconds(seconds);
-        return string.Format("{0:D2}:{1:D2}:{2:D2}:{3:D3}", t.Hours, t.Minutes, t.Seconds, t.Milliseconds);
+        // FIX: Check for overflow values (float.MaxValue) or invalid numbers
+        if (seconds >= 3600000f || float.IsInfinity(seconds) || float.IsNaN(seconds) || seconds < 0)
+        {
+            return "--:--:--:---";
+        }
+
+        try
+        {
+            TimeSpan t = TimeSpan.FromSeconds(seconds);
+            return string.Format("{0:D2}:{1:D2}:{2:D2}:{3:D3}", t.Hours, t.Minutes, t.Seconds, t.Milliseconds);
+        }
+        catch (OverflowException)
+        {
+            return "ERR: OVR";
+        }
     }
 
     private void UpdateVectorIfChanged(ref Vector3 lastVal, Vector3 newVal, TextMeshProUGUI label, bool showMag)
@@ -96,7 +108,7 @@ public class InfoPanelUpdater : MonoBehaviour
 
     private void UpdateIfTimeChanged(ref float lastVal, float newVal, TextMeshProUGUI label)
     {
-        if (label != null && Mathf.Abs(lastVal - newVal) > 0.01f)
+        if (label != null && Mathf.Abs(lastVal - newVal) > 0.001f)
         {
             lastVal = newVal;
             label.text = FormatTime(newVal);
