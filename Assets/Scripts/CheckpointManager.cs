@@ -95,21 +95,6 @@ public class CheckpointManager : MonoBehaviour
         lapStartTime = Time.time;
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            Debug.Log("<color=red>Collision Detected: Hit a Wall!</color>");
-
-            // Optional: Trigger the teleport/reset if they hit a wall too hard
-            Rigidbody rb = collision.gameObject.GetComponent<Rigidbody>();
-            TeleportToLastCheckpoint(rb);
-
-            // Optional: Penalize the lap time in DataBridge
-            // if (DataBridge.Instance != null) DataBridge.Instance.currentLapTime += 5f;
-        }
-    }
-
     public void TeleportToLastCheckpoint(Rigidbody targetRb)
     {
         if (targetRb == null || lastPassedCheckpointTransform == null) return;

@@ -25,6 +25,9 @@ public class DataBridge : MonoBehaviour
     public int lapCount;
     public float currentLapTime, lastLapTime, bestLapTime;
 
+    [Header("LIDAR Data")]
+    public float[] lidarRanges; // Array of distances in meters
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(this); }
