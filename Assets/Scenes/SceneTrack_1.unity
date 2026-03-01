@@ -672,6 +672,7 @@ MonoBehaviour:
   lastLapTime: 0
   bestLapTime: 0
   lidarRanges: []
+  isCrashed: 0
 --- !u!1 &228581934
 GameObject:
   m_ObjectHideFlags: 0
@@ -55299,7 +55300,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 5c9a0e7c0c22a444d9af6297db7c90dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -57602,6 +57603,7 @@ MonoBehaviour:
   minRange: 0.1
   maxRange: 10
   updateRateHz: 40
+  counterClockwise: 1
   noiseSigma: 0
   dropoutProbability: 0
   nearColor: {r: 1, g: 0, b: 0, a: 1}
@@ -59013,6 +59015,7 @@ MonoBehaviour:
   checkpointManager: {fileID: 3469287838504866910}
   wallTag: Wall
   resetCooldown: 0.5
+  crashPenalty: -50
 --- !u!54 &1594770851
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -60290,7 +60293,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 100
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -60674,7 +60677,7 @@ Canvas:
   m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
-  m_PixelPerfect: 0
+  m_PixelPerfect: 1
   m_ReceivesEvents: 1
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
@@ -62062,10 +62065,10 @@ MeshRenderer:
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 1
+  m_MotionVectors: 2
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
+  m_RayTracingMode: 0
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
@@ -62075,8 +62078,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 6163683131102230655, guid: 46f53fd9407e6e94ca4aa2f8ff782877, type: 3}
-  - {fileID: -2951015545970935904, guid: 46f53fd9407e6e94ca4aa2f8ff782877, type: 3}
+  - {fileID: 2100000, guid: a318bf15499f8474f88d3a9788c9a0cb, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -62411,6 +62413,10 @@ MonoBehaviour:
   - {fileID: 8831873287884593685}
   - {fileID: 3585056874464421319}
   respawnHeightOffset: 0.1
+  checkpointPassReward: 1
+  wrongCheckpointPenalty: -1
+  lapCompletionReward: 5
+  bestLapBonus: 10
   showVisualizer: 1
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   finishLineColor: {r: 1, g: 0, b: 0, a: 1}
