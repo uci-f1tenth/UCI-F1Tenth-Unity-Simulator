@@ -12,9 +12,14 @@ public class DataBridge : MonoBehaviour
     [Header("Telemetry & Sensors")]
     public float speedMS;
     public float throttle;
-    public float steering;
+    public float steering; // Input [-1, 1]
     public int encoderA, encoderB;
     public Vector3 imuAngles, angAccel, linAccel;
+
+    [Header("Wheel Telemetry")]
+    public float currentWheelRPM;    // Average RPM of drive wheels
+    public float appliedWheelTorque; // Current torque output (N-m)
+    public float steeringAngleRad;   // Current steering angle in Radians
 
     [Header("Racing")]
     public int lapCount;
@@ -28,14 +33,12 @@ public class DataBridge : MonoBehaviour
 
     void Update()
     {
-        // Global Time and FPS tracking (always runs)
         timeSinceStart = Time.time;
         fps = 1.0f / Time.unscaledDeltaTime;
     }
 
     void FixedUpdate()
     {
-        // Global UPS tracking (FixedUpdate rate)
         ups = 1.0f / Time.fixedDeltaTime;
     }
 }

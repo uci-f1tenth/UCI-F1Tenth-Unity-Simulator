@@ -1,19 +1,25 @@
 using UnityEngine;
-using TMPro; // Required for updating the button text
+using TMPro;
 
 public class CarControl : MonoBehaviour
 {
     [Header("Control Mode")]
     public bool useUdpControl = false;
-    public TextMeshProUGUI buttonLabel; // Drag your Button's Text (TMP) object here
+    public TextMeshProUGUI buttonLabel;
 
-    [Header("Car Properties")]
+    [Header("Direct Motor Properties")]
+    [Tooltip("The absolute maximum torque the motor can produce (Flat Cap).")]
+    public float peakTorqueLimit = 300f;
+    [Tooltip("The theoretical stall torque if there was no limit (defines the slope).")]
     public float motorTorque = 500f;
-    public float brakeTorque = 500f;
-    public float maxSpeed = 15f;
-    public float steeringRange = 30f;
-    public float steeringSpeedDeg = 600.0f;
+    [Tooltip("RPM where torque becomes 0.")]
+    public float maxRPM = 1000f;
 
+    [Header("Steering")]
+    public float steeringRange = 30f;
+    public float steeringSpeedDeg = 300.0f;
+
+    [Header("System References")]
     public CheckpointManager checkpointManager;
 
     private WheelControl[] wheels;
@@ -29,27 +35,22 @@ public class CarControl : MonoBehaviour
     {
         rigidBody = GetComponent<Rigidbody>();
         wheels = GetComponentsInChildren<WheelControl>();
-
-        // Set initial button text based on default state
         UpdateToggleButtonUI();
 
-        if (checkpointManager != null) checkpointManager.TeleportToLastCheckpoint(rigidBody);
+        if (checkpointManager != null)
+            checkpointManager.TeleportToLastCheckpoint(rigidBody);
     }
 
-    // --- NEW: THE TOGGLE LOGIC ---
     public void ToggleControlMode()
     {
-        useUdpControl = !useUdpControl; // Flip the state
+        useUdpControl = !useUdpControl;
         UpdateToggleButtonUI();
-        Debug.Log(useUdpControl ? "Switched to UDP/AI Control" : "Switched to Manual Control");
     }
 
     private void UpdateToggleButtonUI()
     {
         if (buttonLabel != null)
-        {
             buttonLabel.text = useUdpControl ? "Automatic" : "Manual";
-        }
     }
 
     void FixedUpdate()
@@ -70,29 +71,57 @@ public class CarControl : MonoBehaviour
             hInput = inputVector.x;
             vInput = inputVector.y;
 
-            // Always keep the Hub updated with the current state
             DataBridge.Instance.throttle = vInput;
             DataBridge.Instance.steering = hInput;
         }
 
-        // 2. PHYSICS & HUB UPDATE
-        float forwardSpeed = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
-        DataBridge.Instance.speedMS = forwardSpeed;
+        // 2. RPM TRACKING
+        float avgRPM = 0;
+        int motorizedCount = 0;
+        foreach (var wheel in wheels)
+        {
+            if (wheel.motorized)
+            {
+                avgRPM += wheel.WheelCollider.rpm;
+                motorizedCount++;
+            }
+        }
+        if (motorizedCount > 0) avgRPM /= motorizedCount;
 
-        float speedFactor = Mathf.InverseLerp(0, maxSpeed, Mathf.Abs(forwardSpeed));
-        float currentMotorTorque = Mathf.Lerp(motorTorque, 0, speedFactor);
+        // 3. PHASE CURRENT LIMITED TORQUE CALCULATION
+        float rpmRatio = Mathf.Clamp01(Mathf.Abs(avgRPM) / maxRPM);
+        float linearTorque = motorTorque * (1f - rpmRatio);
+        float availableTorque = Mathf.Min(peakTorqueLimit, linearTorque);
 
+        // 4. DIRECT MOTOR OUTPUT
+        // motorOut will be negative if vInput is negative, creating braking/reverse force
+        float motorOut = vInput * availableTorque;
+
+        // 5. STEERING
         float targetAngle = hInput * steeringRange;
         currentSteerAngle = Mathf.MoveTowards(currentSteerAngle, targetAngle, steeringSpeedDeg * Time.fixedDeltaTime);
 
-        // 3. APPLY TO WHEELS
+        // 6. APPLY TO WHEELS
         foreach (var wheel in wheels)
         {
+            // Set Steering
             if (wheel.steerable) wheel.WheelCollider.steerAngle = currentSteerAngle;
-            if (wheel.motorized) wheel.WheelCollider.motorTorque = vInput * currentMotorTorque;
-            wheel.WheelCollider.brakeTorque = (Mathf.Abs(vInput) < 0.01f) ? brakeTorque : 0.0f;
+
+            // Set Motor (Direct Command)
+            if (wheel.motorized) wheel.WheelCollider.motorTorque = motorOut;
+
+            // Explicitly ensure brakeTorque is always zero
+            wheel.WheelCollider.brakeTorque = 0f;
         }
 
-        if (checkpointManager != null && Vector3.Dot(transform.up, Vector3.up) < 0.25f) checkpointManager.TeleportToLastCheckpoint(rigidBody);
+        // SYNC TELEMETRY
+        DataBridge.Instance.currentWheelRPM = avgRPM;
+        DataBridge.Instance.appliedWheelTorque = motorOut;
+        DataBridge.Instance.steeringAngleRad = currentSteerAngle * Mathf.Deg2Rad;
+        DataBridge.Instance.speedMS = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
+
+        // Flip Check
+        if (checkpointManager != null && Vector3.Dot(transform.up, Vector3.up) < 0.25f)
+            checkpointManager.TeleportToLastCheckpoint(rigidBody);
     }
 }
