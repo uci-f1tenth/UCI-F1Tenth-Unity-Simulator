@@ -10,6 +10,16 @@ public class CheckpointManager : MonoBehaviour
     [Header("Teleport Settings")]
     public float respawnHeightOffset = 0.5f;
 
+    [Header("RL Reward Values")]
+    [Tooltip("Reward for passing the correct next checkpoint.")]
+    public float checkpointPassReward = 1.0f;
+    [Tooltip("Penalty for hitting checkpoints out of order.")]
+    public float wrongCheckpointPenalty = -1.0f;
+    [Tooltip("Bonus reward for completing a full lap.")]
+    public float lapCompletionReward = 5.0f;
+    [Tooltip("Additional bonus if the lap was the best time yet.")]
+    public float bestLapBonus = 10.0f;
+
     [Header("Visualizer Settings")]
     public bool showVisualizer = true;
     public Color pathColor = Color.green;
@@ -59,7 +69,10 @@ public class CheckpointManager : MonoBehaviour
         if (index == nextCheckpointIndex)
         {
             Debug.Log($"<color=green>Checkpoint {index} reached!</color>");
-            UDPTunnel.Instance.AddReward(1.0f);
+
+            // Use Variable Reward
+            UDPTunnel.Instance.AddReward(checkpointPassReward);
+
             lastPassedCheckpointTransform = checkpointObjects[index].transform;
             nextCheckpointIndex++;
             ignoreNextWrongCheckpoint = false;
@@ -77,7 +90,9 @@ public class CheckpointManager : MonoBehaviour
         else
         {
             Debug.Log($"<color=red>Wrong Checkpoint! Need {nextCheckpointIndex}, but hit {index}</color>");
-            UDPTunnel.Instance.AddReward(-1.0f);
+
+            // Use Variable Penalty
+            UDPTunnel.Instance.AddReward(wrongCheckpointPenalty);
         }
     }
 
@@ -87,15 +102,20 @@ public class CheckpointManager : MonoBehaviour
         DataBridge.Instance.lapCount++;
         DataBridge.Instance.lastLapTime = lapTime;
 
+        // 1. Give standard lap completion reward
+        UDPTunnel.Instance.AddReward(lapCompletionReward);
+
+        // 2. Check for Best Lap
         if (lapTime < DataBridge.Instance.bestLapTime)
         {
             DataBridge.Instance.bestLapTime = lapTime;
             Debug.Log($"<color=#FFD700>New Best Lap! {lapTime:F3}s</color>");
-            UDPTunnel.Instance.AddReward(10.0f);
+
+            // Use Variable Best Lap Bonus
+            UDPTunnel.Instance.AddReward(bestLapBonus);
         }
 
         Debug.Log($"<color=#FFD700>Lap {DataBridge.Instance.lapCount} Complete! Time: {lapTime:F3}s</color>");
-        UDPTunnel.Instance.AddReward(5.0f);
         lapStartTime = Time.time;
     }
 
@@ -104,6 +124,8 @@ public class CheckpointManager : MonoBehaviour
         if (targetRb == null || lastPassedCheckpointTransform == null) return;
 
         ignoreNextWrongCheckpoint = true;
+
+        // Use Unity 6 property names (linearVelocity/angularVelocity)
         targetRb.linearVelocity = Vector3.zero;
         targetRb.angularVelocity = Vector3.zero;
 
@@ -122,7 +144,6 @@ public class CheckpointManager : MonoBehaviour
         {
             if (checkpointObjects[i] == null) continue;
 
-            // Draw a line to the next checkpoint
             if (i < checkpointObjects.Count - 1)
             {
                 if (checkpointObjects[i + 1] == null) continue;
@@ -131,13 +152,11 @@ public class CheckpointManager : MonoBehaviour
             }
             else
             {
-                // Connect the last checkpoint back to the first (Finish Line to Start)
                 if (checkpointObjects[0] == null) continue;
                 Gizmos.color = finishLineColor;
                 Gizmos.DrawLine(checkpointObjects[i].transform.position, checkpointObjects[0].transform.position);
             }
 
-            // Draw a sphere at the checkpoint position
             Gizmos.DrawWireSphere(checkpointObjects[i].transform.position, 0.1f);
         }
     }
