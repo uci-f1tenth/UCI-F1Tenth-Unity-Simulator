@@ -1,18 +1,15 @@
 using UnityEngine;
 using TMPro;
 
-public class CarControl : MonoBehaviour
+public class VehicleController : MonoBehaviour
 {
     [Header("Control Mode")]
     public bool useUdpControl = false;
     public TextMeshProUGUI buttonLabel;
 
     [Header("Direct Motor Properties")]
-    [Tooltip("The absolute maximum torque the motor can produce (Flat Cap).")]
     public float peakTorqueLimit = 300f;
-    [Tooltip("The theoretical stall torque if there was no limit (defines the slope).")]
     public float motorTorque = 500f;
-    [Tooltip("RPM where torque becomes 0.")]
     public float maxRPM = 1000f;
 
     [Header("Steering")]
@@ -21,6 +18,11 @@ public class CarControl : MonoBehaviour
 
     [Header("System References")]
     public CheckpointManager checkpointManager;
+
+    [Header("Collision Settings")]
+    public string wallTag = "Wall";
+    public float resetCooldown = 0.5f; // Prevents "Double Teleport" glitches
+    private float lastResetTime;
 
     private WheelControl[] wheels;
     private Rigidbody rigidBody;
@@ -38,7 +40,33 @@ public class CarControl : MonoBehaviour
         UpdateToggleButtonUI();
 
         if (checkpointManager != null)
+        {
             checkpointManager.TeleportToLastCheckpoint(rigidBody);
+        }
+        else
+        {
+            Debug.Log("<color=red>VehicleController: checkpointManager == null!</color>");
+        }
+    }
+
+    // --- NEW: Wall Collision Detection ---
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag(wallTag))
+        {
+            HandleReset();
+        }
+    }
+
+    private void HandleReset()
+    {
+        // Only reset if the cooldown has passed
+        if (checkpointManager != null && Time.time > lastResetTime + resetCooldown)
+        {
+            lastResetTime = Time.time;
+            checkpointManager.TeleportToLastCheckpoint(rigidBody);
+            Debug.Log("<color=yellow>Vehicle Reset: Wall Hit or Flip detected.</color>");
+        }
     }
 
     public void ToggleControlMode()
@@ -94,7 +122,6 @@ public class CarControl : MonoBehaviour
         float availableTorque = Mathf.Min(peakTorqueLimit, linearTorque);
 
         // 4. DIRECT MOTOR OUTPUT
-        // motorOut will be negative if vInput is negative, creating braking/reverse force
         float motorOut = vInput * availableTorque;
 
         // 5. STEERING
@@ -104,13 +131,8 @@ public class CarControl : MonoBehaviour
         // 6. APPLY TO WHEELS
         foreach (var wheel in wheels)
         {
-            // Set Steering
             if (wheel.steerable) wheel.WheelCollider.steerAngle = currentSteerAngle;
-
-            // Set Motor (Direct Command)
             if (wheel.motorized) wheel.WheelCollider.motorTorque = motorOut;
-
-            // Explicitly ensure brakeTorque is always zero
             wheel.WheelCollider.brakeTorque = 0f;
         }
 
@@ -120,8 +142,10 @@ public class CarControl : MonoBehaviour
         DataBridge.Instance.steeringAngleRad = currentSteerAngle * Mathf.Deg2Rad;
         DataBridge.Instance.speedMS = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
 
-        // Flip Check
-        if (checkpointManager != null && Vector3.Dot(transform.up, Vector3.up) < 0.25f)
-            checkpointManager.TeleportToLastCheckpoint(rigidBody);
+        // 7. FLIP CHECK (Now uses HandleReset for consistency)
+        if (Vector3.Dot(transform.up, Vector3.up) < 0.25f)
+        {
+            HandleReset();
+        }
     }
 }

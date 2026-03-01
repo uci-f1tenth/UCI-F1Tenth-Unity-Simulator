@@ -10,7 +10,13 @@ public class InfoPanelUpdater : MonoBehaviour
     public TextMeshProUGUI encoderVal, imuVal, angAccelVal, linAccelVal;
     public TextMeshProUGUI lapCountVal, currentLapVal, lastLapVal, bestLapVal;
 
+    [Header("New Wheel & Yaw Slots")]
+    public TextMeshProUGUI rpmVal;      // New: Wheel RPM
+    public TextMeshProUGUI torqueVal;   // New: Applied Torque (Nm)
+    public TextMeshProUGUI yawVal;      // New: Steering Yaw (Radians or Degrees)
+
     private float lastSpeed, lastThrottle, lastSteer, lastCurLap, lastPrevLap, lastBestLap;
+    private float lastRpm, lastTorque, lastYaw; // Cache for new values
     private int lastTicksA, lastTicksB, lastLaps;
     private Vector3 lastImu, lastAngAccel, lastLinAccel;
 
@@ -43,6 +49,12 @@ public class InfoPanelUpdater : MonoBehaviour
         UpdateIfChanged(ref lastThrottle, db.throttle, throttleVal, "F2");
         UpdateIfChanged(ref lastSteer, db.steering, steerVal, "F2");
 
+        // --- NEW: Wheel & Yaw Updates ---
+        // Displaying RPM as whole number, Torque with 1 decimal, Yaw with 3 decimals
+        UpdateIfChanged(ref lastRpm, db.currentWheelRPM, rpmVal, "F0");
+        UpdateIfChanged(ref lastTorque, db.appliedWheelTorque, torqueVal, "F3");
+        UpdateIfChanged(ref lastYaw, db.steeringAngleRad, yawVal, "F3");
+
         if (db.encoderA != lastTicksA || db.encoderB != lastTicksB)
         {
             lastTicksA = db.encoderA; lastTicksB = db.encoderB;
@@ -68,7 +80,6 @@ public class InfoPanelUpdater : MonoBehaviour
 
     private string FormatTime(float seconds)
     {
-        // FIX: Check for overflow values (float.MaxValue) or invalid numbers
         if (seconds >= 3600000f || float.IsInfinity(seconds) || float.IsNaN(seconds) || seconds < 0)
         {
             return "--:--:--:---";
