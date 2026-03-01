@@ -1,7 +1,12 @@
 using UnityEngine;
+using TMPro; // Required for updating the button text
 
 public class CarControl : MonoBehaviour
 {
+    [Header("Control Mode")]
+    public bool useUdpControl = false;
+    public TextMeshProUGUI buttonLabel; // Drag your Button's Text (TMP) object here
+
     [Header("Car Properties")]
     public float motorTorque = 500f;
     public float brakeTorque = 500f;
@@ -11,101 +16,87 @@ public class CarControl : MonoBehaviour
 
     private WheelControl[] wheels;
     private Rigidbody rigidBody;
+    private CarInputActions carControls;
+    private float currentSteerAngle = 0f;
 
-    private CarInputActions carControls; // Reference to the new input system
+    void Awake() => carControls = new CarInputActions();
+    void OnEnable() => carControls.Enable();
+    void OnDisable() => carControls.Disable();
 
-    void Awake()
-    {
-        carControls = new CarInputActions(); // Initialize Input Actions
-    }
-    void OnEnable()
-    {
-        carControls.Enable();
-    }
-
-    void OnDisable()
-    {
-        carControls.Disable();
-    }
-
-    // Start is called before the first frame update
     void Start()
     {
         rigidBody = GetComponent<Rigidbody>();
-
-        // Get all wheel components attached to the car
         wheels = GetComponentsInChildren<WheelControl>();
+
+        // Set initial button text based on default state
+        UpdateToggleButtonUI();
     }
 
-    private float currentSteerAngle = 0f;
-    // FixedUpdate is called at a fixed time interval
+    // --- NEW: THE TOGGLE LOGIC ---
+    public void ToggleControlMode()
+    {
+        useUdpControl = !useUdpControl; // Flip the state
+        UpdateToggleButtonUI();
+        Debug.Log(useUdpControl ? "Switched to UDP/AI Control" : "Switched to Manual Control");
+    }
+
+    private void UpdateToggleButtonUI()
+    {
+        if (buttonLabel != null)
+        {
+            buttonLabel.text = useUdpControl ? "Automatic" : "Manual";
+        }
+    }
+
     void FixedUpdate()
     {
-        // Read the Vector2 input from the new Input System
-        Vector2 inputVector = carControls.Car.Movement.ReadValue<Vector2>();
+        if (DataBridge.Instance == null) return;
 
-        // Get player input for acceleration and steering
-        float vInput = inputVector.y; // Forward/backward input
-        float hInput = inputVector.x; // Steering input
+        float vInput, hInput;
 
-        // Calculate current speed along the car's forward axis
+        // 1. INPUT SELECTION
+        if (useUdpControl)
+        {
+            vInput = DataBridge.Instance.throttle;
+            hInput = DataBridge.Instance.steering;
+        }
+        else
+        {
+            Vector2 inputVector = carControls.Car.Movement.ReadValue<Vector2>();
+            hInput = inputVector.x;
+            vInput = inputVector.y;
+
+            // Always keep the Hub updated with the current state
+            DataBridge.Instance.throttle = vInput;
+            DataBridge.Instance.steering = hInput;
+        }
+
+        // 2. PHYSICS & HUB UPDATE
         float forwardSpeed = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
-        float speedFactor = Mathf.InverseLerp(0, maxSpeed, Mathf.Abs(forwardSpeed)); // Normalized speed factor
+        DataBridge.Instance.speedMS = forwardSpeed;
 
-        // Reduce motor torque and steering at high speeds for better handling
+        float speedFactor = Mathf.InverseLerp(0, maxSpeed, Mathf.Abs(forwardSpeed));
         float currentMotorTorque = Mathf.Lerp(motorTorque, 0, speedFactor);
 
         float targetAngle = hInput * steeringRange;
-        currentSteerAngle = Mathf.MoveTowards(
-            currentSteerAngle,
-            targetAngle,
-            steeringSpeedDeg * Time.fixedDeltaTime
-        );
+        currentSteerAngle = Mathf.MoveTowards(currentSteerAngle, targetAngle, steeringSpeedDeg * Time.fixedDeltaTime);
 
-        // Determine if the player is accelerating or trying to reverse
-        bool isAccelerating = Mathf.Sign(vInput) == Mathf.Sign(forwardSpeed);
-
+        // 3. APPLY TO WHEELS
         foreach (var wheel in wheels)
         {
-            // Apply steering to wheels that support steering
-            if (wheel.steerable)
-            {
-                wheel.WheelCollider.steerAngle = currentSteerAngle;
-            }
-
-            if (wheel.motorized)
-            {
-                wheel.WheelCollider.motorTorque = vInput * currentMotorTorque;
-            }
-
-            if (vInput == 0.0f)
-            {
-                wheel.WheelCollider.brakeTorque = brakeTorque;
-            }
-            else
-            {
-                wheel.WheelCollider.brakeTorque = 0.0f;
-            }
+            if (wheel.steerable) wheel.WheelCollider.steerAngle = currentSteerAngle;
+            if (wheel.motorized) wheel.WheelCollider.motorTorque = vInput * currentMotorTorque;
+            wheel.WheelCollider.brakeTorque = (Mathf.Abs(vInput) < 0.01f) ? brakeTorque : 0.0f;
         }
 
-        // Anti-flip: Vector3.up.dot(transform.up) returns 1 if upright, -1 if upside down
-        if (Vector3.Dot(transform.up, Vector3.up) < 0.5f)
-        {
-            ResetCar();
-        }
+        if (Vector3.Dot(transform.up, Vector3.up) < 0.5f) ResetCar();
     }
 
     public void ResetCar()
     {
-        // 1. Kill the momentum so it doesn't fly away
         rigidBody.linearVelocity = Vector3.zero;
         rigidBody.angularVelocity = Vector3.zero;
-
-        // 2. Reset Rotation (Keep the Y heading, but flatten X and Z)
-        Vector3 currentEuler = transform.eulerAngles;
-        transform.rotation = Quaternion.Euler(0, currentEuler.y, 0);
-
-        // 3. Lift slightly to prevent clipping through the ground
+        transform.rotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
         transform.position += Vector3.up * 0.1f;
     }
 }
