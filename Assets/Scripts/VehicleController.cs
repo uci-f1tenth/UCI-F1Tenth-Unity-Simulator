@@ -151,6 +151,7 @@ public class VehicleController : MonoBehaviour
 
         // 6. SYNC TELEMETRY (SIM-TO-REAL)
         DataBridge.Instance.currentWheelRPM = avgRPM;
+        DataBridge.Instance.appliedWheelTorque = motorOut;
         DataBridge.Instance.steeringAngleRad = currentSteerAngle * Mathf.Deg2Rad;
         DataBridge.Instance.speedMS = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
 
