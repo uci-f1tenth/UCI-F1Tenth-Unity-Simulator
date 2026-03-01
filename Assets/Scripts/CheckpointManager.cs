@@ -20,7 +20,7 @@ public class CheckpointManager : MonoBehaviour
     private Transform lastPassedCheckpointTransform;
     private bool ignoreNextWrongCheckpoint = false;
 
-    void Start()
+    void Awake()
     {
         InitializeCheckpoints();
         lapStartTime = Time.time;

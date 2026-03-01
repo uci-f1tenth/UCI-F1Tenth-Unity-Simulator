@@ -53270,7 +53270,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 823118357}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1838572742}
+        m_TargetAssemblyTypeName: SceneReset, Assembly-CSharp
+        m_MethodName: ResetCurrentScene
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &823118357
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58486,7 +58498,6 @@ MonoBehaviour:
   peakTorqueLimit: 5
   motorTorque: 15
   maxRPM: 3000
-  brakeTorque: 5
   steeringRange: 30
   steeringSpeedDeg: 300
   checkpointManager: {fileID: 1838572740}
@@ -59295,6 +59306,7 @@ GameObject:
   - component: {fileID: 1838572739}
   - component: {fileID: 1838572741}
   - component: {fileID: 1838572740}
+  - component: {fileID: 1838572742}
   m_Layer: 0
   m_Name: Environment
   m_TagString: Untagged
@@ -59367,6 +59379,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 818105979a42e2c44bbca38b7c1bff54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+--- !u!114 &1838572742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1838572738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3332b1a1f9c35f34c95ec2fc3c9e69d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
 --- !u!1 &1940930554
