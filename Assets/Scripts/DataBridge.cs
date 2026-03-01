@@ -13,7 +13,7 @@ public class DataBridge : MonoBehaviour
     public float speedMS;
     public float throttle;
     public float steering; // Input [-1, 1]
-    public int encoderA, encoderB;
+    public int wheelTicks;
     public Vector3 imuAngles, angAccel, linAccel;
 
     [Header("Wheel Telemetry")]
@@ -27,6 +27,9 @@ public class DataBridge : MonoBehaviour
 
     [Header("LIDAR Data")]
     public float[] lidarRanges; // Array of distances in meters
+
+    [Header("Status")]
+    public bool isCrashed = false; // Add this line
 
     private void Awake()
     {

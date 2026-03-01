@@ -13,6 +13,11 @@ public class LidarSensor2D : MonoBehaviour
     public float maxRange = 10f;
     public float updateRateHz = 20f;
 
+    [Header("Scan Direction")]
+    [Tooltip("If true, indices go 0 -> Max Angle (CCW). If false, indices go 0 -> Min Angle (CW).")]
+    public bool counterClockwise = true;
+
+    // ... rest of your Header variables (noise, visualization, etc.) ...
     [Header("Sensor Realism")]
     public float noiseSigma = 0.01f;
     [Range(0, 0.1f)]
@@ -34,7 +39,7 @@ public class LidarSensor2D : MonoBehaviour
 
     private Mesh lineMesh;
     private Vector3[] meshVertices;
-    private Color[] meshColors; // Added for vertex coloring
+    private Color[] meshColors;
     private int[] meshIndices;
     private bool meshNeedsClearing;
 
@@ -51,6 +56,14 @@ public class LidarSensor2D : MonoBehaviour
             DataBridge.Instance.lidarRanges = rangesManaged;
 
         PrepareMeshBuffers();
+
+        MeshRenderer mr = GetComponent<MeshRenderer>();
+        if (mr != null)
+        {
+            mr.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+        }
     }
 
     private void PrepareMeshBuffers()
@@ -84,7 +97,10 @@ public class LidarSensor2D : MonoBehaviour
     {
         Vector3 origin = transform.position;
         Quaternion rotation = transform.rotation;
-        float angleStep = (maxAngleRad - minAngleRad) / (numberOfPoints - 1);
+
+        // Step calculation remains the same
+        float totalAngleRange = maxAngleRad - minAngleRad;
+        float angleStep = totalAngleRange / (numberOfPoints - 1);
 
         QueryParameters qParams = QueryParameters.Default;
         qParams.layerMask = detectionMask;
@@ -92,7 +108,13 @@ public class LidarSensor2D : MonoBehaviour
 
         for (int i = 0; i < numberOfPoints; i++)
         {
-            float currentAngle = minAngleRad + (i * angleStep);
+            // --- DIRECTION LOGIC ---
+            // If CCW: Start at min, add steps.
+            // If CW: Start at max, subtract steps.
+            float currentAngle = counterClockwise
+                ? minAngleRad + (i * angleStep)
+                : maxAngleRad - (i * angleStep);
+
             Vector3 worldDir = rotation * new Vector3(Mathf.Cos(currentAngle), 0, Mathf.Sin(currentAngle));
             commands[i] = new RaycastCommand(origin, worldDir, qParams, maxRange);
         }
@@ -121,17 +143,17 @@ public class LidarSensor2D : MonoBehaviour
             if (showVisualization)
             {
                 float drawDist = float.IsInfinity(rangesManaged[i]) ? maxRange : rangesManaged[i];
-                float currentAngle = minAngleRad + (i * angleStep);
 
-                // Color mapping (0 = nearColor, 1 = farColor)
+                // Visualization must match the ray direction
+                float currentAngle = counterClockwise
+                    ? minAngleRad + (i * angleStep)
+                    : maxAngleRad - (i * angleStep);
+
                 float t = Mathf.InverseLerp(minRange, maxRange, drawDist);
                 Color rayColor = Color.Lerp(nearColor, farColor, t);
 
-                // Origin point
                 meshVertices[i * 2] = Vector3.zero;
                 meshColors[i * 2] = rayColor;
-
-                // Hit point
                 meshVertices[i * 2 + 1] = new Vector3(Mathf.Cos(currentAngle) * drawDist, 0, Mathf.Sin(currentAngle) * drawDist);
                 meshColors[i * 2 + 1] = rayColor;
             }
@@ -140,7 +162,7 @@ public class LidarSensor2D : MonoBehaviour
         if (showVisualization)
         {
             lineMesh.vertices = meshVertices;
-            lineMesh.colors = meshColors; // Send colors to GPU
+            lineMesh.colors = meshColors;
             lineMesh.SetIndices(meshIndices, MeshTopology.Lines, 0);
             lineMesh.RecalculateBounds();
             meshNeedsClearing = true;
@@ -163,16 +185,6 @@ public class LidarSensor2D : MonoBehaviour
 
     private void ClearVisuals()
     {
-        if (lineMesh != null)
-        {
-            lineMesh.Clear();
-            meshNeedsClearing = false;
-        }
-    }
-
-    public void ToggleVisualization(bool state)
-    {
-        showVisualization = state;
-        if (!state) ClearVisuals();
+        if (lineMesh != null) { lineMesh.Clear(); meshNeedsClearing = false; }
     }
 }

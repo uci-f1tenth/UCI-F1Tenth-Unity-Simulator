@@ -17,7 +17,7 @@ public class InfoPanelUpdater : MonoBehaviour
 
     private float lastSpeed, lastThrottle, lastSteer, lastCurLap, lastPrevLap, lastBestLap;
     private float lastRpm, lastTorque, lastYaw; // Cache for new values
-    private int lastTicksA, lastTicksB, lastLaps;
+    private int lastWheelTicks, lastLaps;
     private Vector3 lastImu, lastAngAccel, lastLinAccel;
 
     private float uiRefreshTimer = 0.2f;
@@ -32,7 +32,7 @@ public class InfoPanelUpdater : MonoBehaviour
         {
             UpdateText(fpsVal, DataBridge.Instance.fps.ToString("F0"));
             UpdateText(timeVal, FormatTime(DataBridge.Instance.timeSinceStart));
-            uiRefreshTimer = 0.2f;
+            uiRefreshTimer = 0.1f;
         }
     }
 
@@ -55,10 +55,10 @@ public class InfoPanelUpdater : MonoBehaviour
         UpdateIfChanged(ref lastTorque, db.appliedWheelTorque, torqueVal, "F3");
         UpdateIfChanged(ref lastYaw, db.steeringAngleRad, yawVal, "F3");
 
-        if (db.encoderA != lastTicksA || db.encoderB != lastTicksB)
+        if (db.wheelTicks != lastWheelTicks)
         {
-            lastTicksA = db.encoderA; lastTicksB = db.encoderB;
-            UpdateText(encoderVal, $"{lastTicksA} | {lastTicksB}");
+            lastWheelTicks = db.wheelTicks;
+            UpdateText(encoderVal, $"{lastWheelTicks}");
         }
 
         UpdateVectorIfChanged(ref lastImu, db.imuAngles, imuVal, false);

@@ -59,6 +59,7 @@ public class CheckpointManager : MonoBehaviour
         if (index == nextCheckpointIndex)
         {
             Debug.Log($"<color=green>Checkpoint {index} reached!</color>");
+            UDPTunnel.Instance.AddReward(1.0f);
             lastPassedCheckpointTransform = checkpointObjects[index].transform;
             nextCheckpointIndex++;
             ignoreNextWrongCheckpoint = false;
@@ -76,6 +77,7 @@ public class CheckpointManager : MonoBehaviour
         else
         {
             Debug.Log($"<color=red>Wrong Checkpoint! Need {nextCheckpointIndex}, but hit {index}</color>");
+            UDPTunnel.Instance.AddReward(-1.0f);
         }
     }
 
@@ -89,9 +91,11 @@ public class CheckpointManager : MonoBehaviour
         {
             DataBridge.Instance.bestLapTime = lapTime;
             Debug.Log($"<color=#FFD700>New Best Lap! {lapTime:F3}s</color>");
+            UDPTunnel.Instance.AddReward(10.0f);
         }
 
         Debug.Log($"<color=#FFD700>Lap {DataBridge.Instance.lapCount} Complete! Time: {lapTime:F3}s</color>");
+        UDPTunnel.Instance.AddReward(5.0f);
         lapStartTime = Time.time;
     }
 

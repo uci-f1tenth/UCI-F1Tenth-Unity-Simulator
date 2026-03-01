@@ -19,9 +19,10 @@ public class VehicleController : MonoBehaviour
     [Header("System References")]
     public CheckpointManager checkpointManager;
 
-    [Header("Collision Settings")]
+    [Header("Collision & RL Settings")]
     public string wallTag = "Wall";
-    public float resetCooldown = 0.5f; // Prevents "Double Teleport" glitches
+    public float resetCooldown = 0.5f;
+    public float crashPenalty = -50.0f; // Increased penalty for RL training
     private float lastResetTime;
 
     private WheelControl[] wheels;
@@ -40,16 +41,9 @@ public class VehicleController : MonoBehaviour
         UpdateToggleButtonUI();
 
         if (checkpointManager != null)
-        {
             checkpointManager.TeleportToLastCheckpoint(rigidBody);
-        }
-        else
-        {
-            Debug.Log("<color=red>VehicleController: checkpointManager == null!</color>");
-        }
     }
 
-    // --- NEW: Wall Collision Detection ---
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.CompareTag(wallTag))
@@ -58,14 +52,36 @@ public class VehicleController : MonoBehaviour
         }
     }
 
-    private void HandleReset()
+    public void HandleReset()
     {
-        // Only reset if the cooldown has passed
-        if (checkpointManager != null && Time.time > lastResetTime + resetCooldown)
+        // Only trigger if cooldown has passed to avoid multiple penalties in one hit
+        if (Time.time > lastResetTime + resetCooldown)
         {
             lastResetTime = Time.time;
-            checkpointManager.TeleportToLastCheckpoint(rigidBody);
-            Debug.Log("<color=yellow>Vehicle Reset: Wall Hit or Flip detected.</color>");
+
+            // 1. Update DataBridge for Python Telemetry
+            if (DataBridge.Instance != null)
+            {
+                DataBridge.Instance.isCrashed = true; // Flag sent to Python
+            }
+
+            // 2. Add Thread-Safe Penalty
+            if (UDPTunnel.Instance != null)
+            {
+                UDPTunnel.Instance.AddReward(crashPenalty);
+            }
+
+            // 3. Physical Teleport
+            if (checkpointManager != null)
+            {
+                checkpointManager.TeleportToLastCheckpoint(rigidBody);
+
+                // Zero out velocities to prevent the car from sliding after teleport
+                rigidBody.linearVelocity = Vector3.zero;
+                rigidBody.angularVelocity = Vector3.zero;
+            }
+
+            Debug.Log($"<color=red>Vehicle Crash!</color> Penalty: {crashPenalty}");
         }
     }
 
@@ -116,33 +132,29 @@ public class VehicleController : MonoBehaviour
         }
         if (motorizedCount > 0) avgRPM /= motorizedCount;
 
-        // 3. PHASE CURRENT LIMITED TORQUE CALCULATION
+        // 3. TORQUE CALCULATION
         float rpmRatio = Mathf.Clamp01(Mathf.Abs(avgRPM) / maxRPM);
         float linearTorque = motorTorque * (1f - rpmRatio);
         float availableTorque = Mathf.Min(peakTorqueLimit, linearTorque);
-
-        // 4. DIRECT MOTOR OUTPUT
         float motorOut = vInput * availableTorque;
 
-        // 5. STEERING
+        // 4. STEERING
         float targetAngle = hInput * steeringRange;
         currentSteerAngle = Mathf.MoveTowards(currentSteerAngle, targetAngle, steeringSpeedDeg * Time.fixedDeltaTime);
 
-        // 6. APPLY TO WHEELS
+        // 5. APPLY TO WHEELS
         foreach (var wheel in wheels)
         {
             if (wheel.steerable) wheel.WheelCollider.steerAngle = currentSteerAngle;
             if (wheel.motorized) wheel.WheelCollider.motorTorque = motorOut;
-            wheel.WheelCollider.brakeTorque = 0f;
         }
 
-        // SYNC TELEMETRY
+        // 6. SYNC TELEMETRY (SIM-TO-REAL)
         DataBridge.Instance.currentWheelRPM = avgRPM;
-        DataBridge.Instance.appliedWheelTorque = motorOut;
         DataBridge.Instance.steeringAngleRad = currentSteerAngle * Mathf.Deg2Rad;
         DataBridge.Instance.speedMS = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
 
-        // 7. FLIP CHECK (Now uses HandleReset for consistency)
+        // 8. FLIP CHECK
         if (Vector3.Dot(transform.up, Vector3.up) < 0.25f)
         {
             HandleReset();
