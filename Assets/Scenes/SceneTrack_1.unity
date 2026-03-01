@@ -442,6 +442,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 919132149621370709}
+        m_TargetAssemblyTypeName: CarPhysicsVisualizer, Assembly-CSharp
+        m_MethodName: ToggleAllVisuals
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   m_IsOn: 1
 --- !u!1 &139197991
 GameObject:
@@ -59338,6 +59350,9 @@ MonoBehaviour:
   - {fileID: 8831873287884593685}
   - {fileID: 3585056874464421319}
   respawnHeightOffset: 0.1
+  showVisualizer: 1
+  pathColor: {r: 0, g: 1, b: 0, a: 1}
+  finishLineColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!114 &1838572741
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60896,9 +60911,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c38a8c087aec0974194e072eee30642c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  showVisuals: 1
   gizmoSize: 0.05
   steeringLineLength: 1
   velocityScale: 0.5
+  accelScale: 0.2
   rb: {fileID: 1594770851}
   wheelL: {fileID: 736693557}
   wheelR: {fileID: 1449415406}

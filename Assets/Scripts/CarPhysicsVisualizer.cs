@@ -5,9 +5,11 @@ using UnityEngine.Rendering;
 public class CarPhysicsVisualizer : MonoBehaviour
 {
     [Header("Settings")]
+    public bool showVisuals = true; // Master toggle
     public float gizmoSize = 0.05f;
     public float steeringLineLength = 2.0f;
     public float velocityScale = 0.5f;
+    public float accelScale = 0.2f;
 
     [Header("References")]
     public Rigidbody rb;
@@ -15,22 +17,39 @@ public class CarPhysicsVisualizer : MonoBehaviour
     public WheelCollider wheelR;
 
     private Material lineMaterial;
+    private Vector3 lastVelocity;
+    private Vector3 currentAcceleration;
+
+    // --- UI TOGGLE FUNCTIONS ---
+
+    public void ToggleAllVisuals(bool value) => showVisuals = value;
+
+    // Optional: Individual toggles if you have multiple UI checkboxes
+    public void SetShowVisuals(bool value) => showVisuals = value;
+
+    void FixedUpdate()
+    {
+        if (rb == null) return;
+
+        // Calculate Acceleration: (Current Vel - Last Vel) / Time
+        Vector3 currentVelocity = rb.linearVelocity;
+        currentAcceleration = (currentVelocity - lastVelocity) / Time.fixedDeltaTime;
+        lastVelocity = currentVelocity;
+    }
 
     void OnEnable()
     {
-        // Subscribe to the URP render loop
         RenderPipelineManager.endContextRendering += OnEndContextRendering;
     }
 
     void OnDisable()
     {
-        // Unsubscribe to avoid memory leaks
         RenderPipelineManager.endContextRendering -= OnEndContextRendering;
     }
 
     private void OnDrawGizmos()
     {
-        if (rb == null) return;
+        if (rb == null || !showVisuals) return;
 
         // 1. Center of Mass
         Gizmos.color = Color.red;
@@ -47,15 +66,14 @@ public class CarPhysicsVisualizer : MonoBehaviour
         }
     }
 
-    // This replaces OnPostRender for URP
     void OnEndContextRendering(ScriptableRenderContext context, List<Camera> cameras)
     {
-        if (rb == null || !Application.isPlaying) return;
+        if (rb == null || !Application.isPlaying || !showVisuals) return;
 
         CreateLineMaterial();
         lineMaterial.SetPass(0);
 
-        GL.PushMatrix(); // Save the current matrix
+        GL.PushMatrix();
         GL.Begin(GL.LINES);
 
         Vector3 worldCoM = rb.worldCenterOfMass;
@@ -63,17 +81,21 @@ public class CarPhysicsVisualizer : MonoBehaviour
         // 1. World Velocity (Blue)
         DrawLine(worldCoM, worldCoM + (rb.linearVelocity * velocityScale), Color.blue);
 
-        // 2. Forward Velocity (Yellow)
+        // 2. Acceleration (Red)
+        // This shows which way the force is pulling the car (Gas, Brake, or Centripetal)
+        DrawLine(worldCoM, worldCoM + (currentAcceleration * accelScale), Color.red);
+
+        // 3. Forward Velocity (Yellow)
         float forwardSpeed = Vector3.Dot(rb.linearVelocity, rb.transform.forward);
         Vector3 forwardVelVec = rb.transform.forward * forwardSpeed;
         DrawLine(worldCoM, worldCoM + (forwardVelVec * velocityScale), Color.yellow);
 
-        // 3. Steering Visuals
+        // 4. Steering Visuals
         if (wheelL) DrawSteering(wheelL);
         if (wheelR) DrawSteering(wheelR);
 
         GL.End();
-        GL.PopMatrix(); // Restore the matrix
+        GL.PopMatrix();
     }
 
     void DrawSteering(WheelCollider wheel)

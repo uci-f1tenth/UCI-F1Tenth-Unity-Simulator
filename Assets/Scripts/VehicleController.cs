@@ -32,6 +32,8 @@ public class CarControl : MonoBehaviour
 
         // Set initial button text based on default state
         UpdateToggleButtonUI();
+
+        if (checkpointManager != null) checkpointManager.TeleportToLastCheckpoint(rigidBody);
     }
 
     // --- NEW: THE TOGGLE LOGIC ---
@@ -91,14 +93,6 @@ public class CarControl : MonoBehaviour
             wheel.WheelCollider.brakeTorque = (Mathf.Abs(vInput) < 0.01f) ? brakeTorque : 0.0f;
         }
 
-        if (Vector3.Dot(transform.up, Vector3.up) < 0.5f) checkpointManager.TeleportToLastCheckpoint(rigidBody);
-    }
-
-    public void ResetCar()
-    {
-        rigidBody.linearVelocity = Vector3.zero;
-        rigidBody.angularVelocity = Vector3.zero;
-        transform.rotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
-        transform.position += Vector3.up * 0.1f;
+        if (checkpointManager != null && Vector3.Dot(transform.up, Vector3.up) < 0.25f) checkpointManager.TeleportToLastCheckpoint(rigidBody);
     }
 }
