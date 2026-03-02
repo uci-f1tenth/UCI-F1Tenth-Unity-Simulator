@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class CarPhysicsVisualizer : MonoBehaviour
+public class CarPhysicsVisualizer : MonoBehaviour, ITimeStepper
 {
     [Header("Settings")]
     public bool showVisuals = true; // Master toggle
@@ -27,13 +27,13 @@ public class CarPhysicsVisualizer : MonoBehaviour
     // Optional: Individual toggles if you have multiple UI checkboxes
     public void SetShowVisuals(bool value) => showVisuals = value;
 
-    void FixedUpdate()
+    public void TimeStep()
     {
         if (rb == null) return;
 
         // Calculate Acceleration: (Current Vel - Last Vel) / Time
         Vector3 currentVelocity = rb.linearVelocity;
-        currentAcceleration = (currentVelocity - lastVelocity) / Time.fixedDeltaTime;
+        currentAcceleration = (currentVelocity - lastVelocity) / TimeStepManager.fixedDeltaTime;
         lastVelocity = currentVelocity;
     }
 

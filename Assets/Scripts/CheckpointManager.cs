@@ -33,7 +33,7 @@ public class CheckpointManager : MonoBehaviour
     void Awake()
     {
         InitializeCheckpoints();
-        lapStartTime = Time.time;
+        lapStartTime = TimeStepManager.fixedTime;
 
         if (checkpointObjects.Count > 0)
             lastPassedCheckpointTransform = checkpointObjects[0].transform;
@@ -42,10 +42,10 @@ public class CheckpointManager : MonoBehaviour
             DataBridge.Instance.bestLapTime = float.MaxValue;
     }
 
-    void Update()
+    public void TimeStep(float dt)
     {
         if (DataBridge.Instance == null) return;
-        DataBridge.Instance.currentLapTime = Time.time - lapStartTime;
+        DataBridge.Instance.currentLapTime = TimeStepManager.fixedTime - lapStartTime;
     }
 
     private void InitializeCheckpoints()
@@ -98,7 +98,7 @@ public class CheckpointManager : MonoBehaviour
 
     private void CompleteLap()
     {
-        float lapTime = Time.time - lapStartTime;
+        float lapTime = TimeStepManager.fixedTime - lapStartTime;
         DataBridge.Instance.lapCount++;
         DataBridge.Instance.lastLapTime = lapTime;
 
@@ -116,7 +116,7 @@ public class CheckpointManager : MonoBehaviour
         }
 
         Debug.Log($"<color=#FFD700>Lap {DataBridge.Instance.lapCount} Complete! Time: {lapTime:F3}s</color>");
-        lapStartTime = Time.time;
+        lapStartTime = TimeStepManager.fixedTime;
     }
 
     public void TeleportToLastCheckpoint(Rigidbody targetRb)

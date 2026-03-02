@@ -36,7 +36,7 @@ public class InfoPanelUpdater : MonoBehaviour
         }
     }
 
-    void FixedUpdate()
+    public void TimeStep()
     {
         if (DataBridge.Instance == null) return;
         var db = DataBridge.Instance;

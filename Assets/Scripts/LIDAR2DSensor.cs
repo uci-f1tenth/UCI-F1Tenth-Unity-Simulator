@@ -43,6 +43,7 @@ public class LidarSensor2D : MonoBehaviour
     private int[] meshIndices;
     private bool meshNeedsClearing;
 
+    public void ToggleAllVisuals(bool value) => showVisualization = value;
     void Start()
     {
         commands = new NativeArray<RaycastCommand>(numberOfPoints, Allocator.Persistent);
@@ -81,10 +82,10 @@ public class LidarSensor2D : MonoBehaviour
         if (results.IsCreated) results.Dispose();
     }
 
-    void FixedUpdate()
+    public void TimeStep()
     {
         float interval = 1f / updateRateHz;
-        scanTimer += Time.fixedDeltaTime;
+        scanTimer += TimeStepManager.fixedDeltaTime;
 
         if (scanTimer >= interval)
         {

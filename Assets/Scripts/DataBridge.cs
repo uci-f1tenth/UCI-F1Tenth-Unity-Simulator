@@ -43,8 +43,8 @@ public class DataBridge : MonoBehaviour
         fps = 1.0f / Time.unscaledDeltaTime;
     }
 
-    void FixedUpdate()
+    public void TimeStep()
     {
-        ups = 1.0f / Time.fixedDeltaTime;
+        ups = 1.0f / TimeStepManager.fixedDeltaTime;
     }
 }

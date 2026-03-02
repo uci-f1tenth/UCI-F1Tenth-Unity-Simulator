@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class IMUSensor : MonoBehaviour
+public class IMUSensor : MonoBehaviour, ITimeStepper
 {
     [Header("Hardware Link")]
     public Rigidbody targetRigidbody;
@@ -25,28 +25,28 @@ public class IMUSensor : MonoBehaviour
         if (targetRigidbody == null)
             targetRigidbody = GetComponentInParent<Rigidbody>();
 
-        lastSampleTime = Time.fixedTime;
+        lastSampleTime = TimeStepManager.fixedTime;
     }
 
-    void FixedUpdate()
+    public void TimeStep()
     {
         if (DataBridge.Instance == null || targetRigidbody == null) return;
 
         // Only run logic if enough time has passed to match the target Hz
-        if (Time.fixedTime >= nextUpdateTime)
+        if (TimeStepManager.fixedTime >= nextUpdateTime)
         {
-            float deltaTime = Time.fixedTime - lastSampleTime;
+            float deltaTime = TimeStepManager.fixedTime - lastSampleTime;
             // Prevent division by zero on first frame
-            if (deltaTime <= 0) deltaTime = Time.fixedDeltaTime;
+            if (deltaTime <= 0) deltaTime = TimeStepManager.fixedDeltaTime;
 
             UpdateSensorData(deltaTime);
 
             // Schedule next update based on frequency (1 / Hz)
             if (updateRate > 0f)
             {
-                nextUpdateTime = Time.fixedTime + (1f / updateRate);
+                nextUpdateTime = TimeStepManager.fixedTime + (1f / updateRate);
             }
-            lastSampleTime = Time.fixedTime;
+            lastSampleTime = TimeStepManager.fixedTime;
         }
     }
 

@@ -10,6 +10,8 @@ public class UDPTunnel : MonoBehaviour
 {
     public static UDPTunnel Instance { get; private set; }
 
+    public SceneReset sceneResetObject;
+
     [Header("Network Settings")]
     public TMP_InputField ipInput;
     public TMP_InputField sendPortInput, recvPortInput;
@@ -77,7 +79,6 @@ public class UDPTunnel : MonoBehaviour
             if (buttonLabel != null) buttonLabel.text = "Disconnect";
 
             Debug.Log($"UDP Tunnel Active. Sending to {ip}:{sPort}, Listening on {rPort}");
-            StartCoroutine(EndOfFixedUpdateLoop());
         }
         catch (Exception e)
         {
@@ -86,17 +87,7 @@ public class UDPTunnel : MonoBehaviour
         }
     }
 
-    private IEnumerator EndOfFixedUpdateLoop()
-    {
-        while (isConnected)
-        {
-            // Wait for physics to finish so we send the final state of the frame
-            yield return new WaitForFixedUpdate();
-            if (DataBridge.Instance != null) SendTelemetry();
-        }
-    }
-
-    private void SendTelemetry()
+    public void SendTelemetry()
     {
         int o = 0;
         var db = DataBridge.Instance;
@@ -129,7 +120,6 @@ public class UDPTunnel : MonoBehaviour
         // Check if 'isCrashed' exists in DataBridge, otherwise send 0
         // (Assuming you added 'public bool isCrashed;' to DataBridge)
         Pack(db.isCrashed ? 1 : 0, ref o);   // 76
-        db.isCrashed = false;                // Resetting here ensures Python saw it
 
         Pack(lidarCount, ref o);             // 80
 
@@ -146,7 +136,7 @@ public class UDPTunnel : MonoBehaviour
             sendPayload[o + (i * 2) + 1] = (byte)(q >> 8);
         }
 
-        try { udpClient.Send(sendPayload, sendPayload.Length, remoteEndPoint); }
+        try { udpClient.Send(sendPayload, sendPayload.Length, remoteEndPoint); db.isCrashed = false; }
         catch { /* Transient network error, ignore */ }
     }
 
@@ -166,6 +156,12 @@ public class UDPTunnel : MonoBehaviour
             {
                 DataBridge.Instance.steering = BitConverter.ToSingle(b, 0);
                 DataBridge.Instance.throttle = BitConverter.ToSingle(b, 4);
+
+                // Reset command from Python training scripts
+                if (sceneResetObject != null && DataBridge.Instance.steering >= 100.0f &&  DataBridge.Instance.throttle >= 100.0f)
+                {
+                    sceneResetObject.ResetCurrentScene();
+                }
             }
         }
         catch (ObjectDisposedException) { return; } // Socket closed gracefully
