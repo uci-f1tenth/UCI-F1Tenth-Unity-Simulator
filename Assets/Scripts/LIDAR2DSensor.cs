@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class LidarSensor2D : MonoBehaviour
+public class LidarSensor2D : MonoBehaviour, ITimeStepper
 {
     [Header("Lidar Configuration")]
     public int numberOfPoints = 360;

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class WheelTicksSim : MonoBehaviour
+public class WheelTicksSim : MonoBehaviour, ITimeStepper
 {
     [Header("Hardware Configuration")]
     [Tooltip("How many pulses the physical sensor sends per 1 full wheel turn.")]
@@ -12,7 +12,7 @@ public class WheelTicksSim : MonoBehaviour
     private double _internalAccumulatedTicks = 0;
     private float _updateTimer = 0f;
 
-    void FixedUpdate()
+    public void TimeStep()
     {
         if (DataBridge.Instance == null) return;
 
@@ -21,11 +21,11 @@ public class WheelTicksSim : MonoBehaviour
         float ticksPerSecond = (rpm / 60.0f) * ticksPerRevolution;
 
         // We always accumulate the ticks internally to keep the math perfect
-        _internalAccumulatedTicks += ticksPerSecond * Time.fixedDeltaTime;
+        _internalAccumulatedTicks += ticksPerSecond * TimeStepManager.fixedDeltaTime;
 
         // 2. Control the output rate to the DataBridge
         float interval = 1f / updateRateHz;
-        _updateTimer += Time.fixedDeltaTime;
+        _updateTimer += TimeStepManager.fixedDeltaTime;
 
         if (_updateTimer >= interval)
         {

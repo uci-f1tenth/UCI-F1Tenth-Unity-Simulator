@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DataBridge : MonoBehaviour
+public class DataBridge : MonoBehaviour, ITimeStepper
 {
     public static DataBridge Instance { get; private set; }
 

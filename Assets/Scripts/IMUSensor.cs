@@ -1,5 +1,5 @@
 using UnityEngine;
-
+// TODO : Have helper functions convert between unity and real world IMU axes
 public class IMUSensor : MonoBehaviour, ITimeStepper
 {
     [Header("Hardware Link")]

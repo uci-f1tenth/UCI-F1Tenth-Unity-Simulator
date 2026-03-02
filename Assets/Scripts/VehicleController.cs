@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-public class VehicleController : MonoBehaviour
+public class VehicleController : MonoBehaviour, ITimeStepper
 {
     [Header("Control Mode")]
     public bool useUdpControl = false;
@@ -55,9 +55,9 @@ public class VehicleController : MonoBehaviour
     public void HandleReset()
     {
         // Only trigger if cooldown has passed to avoid multiple penalties in one hit
-        if (Time.time > lastResetTime + resetCooldown)
+        if (TimeStepManager.fixedTime > lastResetTime + resetCooldown)
         {
-            lastResetTime = Time.time;
+            lastResetTime = TimeStepManager.fixedTime;
 
             // 1. Update DataBridge for Python Telemetry
             if (DataBridge.Instance != null)
@@ -97,7 +97,7 @@ public class VehicleController : MonoBehaviour
             buttonLabel.text = useUdpControl ? "Automatic" : "Manual";
     }
 
-    void FixedUpdate()
+    public void TimeStep()
     {
         if (DataBridge.Instance == null) return;
 
@@ -140,7 +140,7 @@ public class VehicleController : MonoBehaviour
 
         // 4. STEERING
         float targetAngle = hInput * steeringRange;
-        currentSteerAngle = Mathf.MoveTowards(currentSteerAngle, targetAngle, steeringSpeedDeg * Time.fixedDeltaTime);
+        currentSteerAngle = Mathf.MoveTowards(currentSteerAngle, targetAngle, steeringSpeedDeg * TimeStepManager.fixedDeltaTime);
 
         // 5. APPLY TO WHEELS
         foreach (var wheel in wheels)

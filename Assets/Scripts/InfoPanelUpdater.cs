@@ -2,7 +2,7 @@ using UnityEngine;
 using TMPro;
 using System;
 
-public class InfoPanelUpdater : MonoBehaviour
+public class InfoPanelUpdater : MonoBehaviour, ITimeStepper
 {
     [Header("UI Value Slots")]
     public TextMeshProUGUI timeVal;
