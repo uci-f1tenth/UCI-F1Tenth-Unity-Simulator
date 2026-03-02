@@ -9,6 +9,7 @@ public class UDPTunnel : MonoBehaviour
 {
     public static UDPTunnel Instance { get; private set; }
 
+    [Header("References")]
     public SceneReset sceneResetObject;
     public TimeStepManager timeStepManager;
 
@@ -17,27 +18,85 @@ public class UDPTunnel : MonoBehaviour
     public TMP_InputField sendPortInput, recvPortInput;
     public TextMeshProUGUI buttonLabel;
 
+    // Networking
     private UdpClient udpClient;
     private IPEndPoint remoteEndPoint;
     public bool isConnected = false;
 
-    // INCREASED HEADER SIZE: 84 (Old) + 4 (SeqID) = 88 bytes
+    // Data Protocol
+    // 22 items * 4 bytes = 88 bytes
     private const int HEADER_SIZE = 88;
     private const float MAX_LIDAR_DIST = 20f;
     private byte[] sendPayload;
     private int lidarCount = 0;
-
-    // --- Sequence Logic ---
-    private uint sequenceId = 0; // Simple counter for ordering
+    private uint sequenceId = 0;
 
     // Thread-safe Reward
     private int _rewardScaled = 0;
     private const float REWARD_SCALE = 1000f;
 
+    // --- THREAD SAFETY QUEUE ---
+    private readonly object _lock = new object();
+    private float _pendingSteer = 0f;
+    private float _pendingThrottle = 0f;
+    private bool _hasNewCommand = false;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) Destroy(this);
         else Instance = this;
+    }
+
+    private void Update()
+    {
+        // 1. Check for commands from the background thread
+        float steer = 0, throttle = 0;
+        bool processCommand = false;
+
+        lock (_lock)
+        {
+            if (_hasNewCommand)
+            {
+                steer = _pendingSteer;
+                throttle = _pendingThrottle;
+                processCommand = true;
+                _hasNewCommand = false;
+            }
+        }
+
+        // 2. Execute on Main Thread
+        if (processCommand)
+        {
+            ProcessControlCommand(steer, throttle);
+        }
+    }
+
+    private void ProcessControlCommand(float steer, float throttle)
+    {
+        // RESET SIGNAL: If inputs are effectively "Infinity" (>= 100), reset.
+        /*
+        if (sceneResetObject != null && steer >= 100f && throttle >= 100f)
+        {
+            sceneResetObject.ResetCurrentScene();
+            // Optional: Send a 'fresh' telemetry packet after reset so Python knows we are back at start
+            sequenceId = 0; // Reset sequence too?
+            return;
+        }
+        */
+
+        // STANDARD CONTROL
+        if (DataBridge.Instance != null)
+        {
+            DataBridge.Instance.steering = steer;
+            DataBridge.Instance.throttle = throttle;
+        }
+
+        // PHYSICS STEP (Manual Mode)
+        if (timeStepManager != null && timeStepManager.mode == TimeStepManager.ControlMode.Manual)
+        {
+            // This calculates physics for exactly one dt
+            timeStepManager.StepManual(timeStepManager.fixedStepSize);
+        }
     }
 
     public void AddReward(float amt) => Interlocked.Add(ref _rewardScaled, (int)(amt * REWARD_SCALE));
@@ -61,14 +120,24 @@ public class UDPTunnel : MonoBehaviour
             var lidar = FindFirstObjectByType<LidarSensor2D>();
             lidarCount = lidar != null ? lidar.numberOfPoints : 0;
 
-            // Re-allocate payload buffer to fit new Header size
+            // Allocation
             sendPayload = new byte[HEADER_SIZE + (lidarCount * 2)];
-
-            // Reset Sequence ID on new connection so Python starts fresh
             sequenceId = 0;
 
-            // --- Socket Reuse Logic ---
             udpClient = new UdpClient();
+
+            // --- FIX FOR "EXISTING CONNECTION CLOSED" ERROR ---
+            // SIO_UDP_CONNRESET = -1744830452
+            // This prevents the socket from closing if Python stops listening briefly.
+            try
+            {
+                udpClient.Client.IOControl((IOControlCode)(-1744830452), new byte[] { 0 }, null);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[UDP] Could not set SIO_UDP_CONNRESET: {e.Message}");
+            }
+
             udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
             int rPort = int.Parse(recvPortInput.text);
@@ -82,8 +151,7 @@ public class UDPTunnel : MonoBehaviour
 
             isConnected = true;
             if (buttonLabel != null) buttonLabel.text = "Disconnect";
-
-            Debug.Log($"[UDP] Connected. SeqID reset. Target: {ip}:{sPort}");
+            Debug.Log($"[UDP] Listening on {rPort}, Target: {ip}:{sPort}");
         }
         catch (Exception e)
         {
@@ -99,12 +167,11 @@ public class UDPTunnel : MonoBehaviour
         int o = 0;
         var db = DataBridge.Instance;
 
-        // --- 0. Sequence ID (The Reliability Layer) ---
-        // Increments every single frame. Python checks this to detect packet loss/ordering.
+        // --- PACKING (88 Bytes Header) ---
         Pack(sequenceId, ref o);
         sequenceId++;
 
-        // --- 1. System & Basic Motion ---
+        // Motion
         Pack(db.timeSinceStart, ref o);
         Pack(TimeStepManager.fixedDeltaTime, ref o);
         Pack(db.speedMS, ref o);
@@ -114,7 +181,7 @@ public class UDPTunnel : MonoBehaviour
         Pack(db.wheelTicks, ref o);
         Pack(db.currentWheelRPM, ref o);
 
-        // --- 2. IMU Conversion ---
+        // IMU
         Vector3 rEuler = new Vector3(db.imuAngles.z, -db.imuAngles.x, db.imuAngles.y);
         Vector3 rLin = new Vector3(db.linAccel.z, -db.linAccel.x, db.linAccel.y);
         Vector3 rAng = new Vector3(db.angAccel.z, -db.angAccel.x, db.angAccel.y);
@@ -123,16 +190,14 @@ public class UDPTunnel : MonoBehaviour
         Pack(rLin.x, ref o); Pack(rLin.y, ref o); Pack(rLin.z, ref o);
         Pack(rAng.x, ref o); Pack(rAng.y, ref o); Pack(rAng.z, ref o);
 
-        // --- 3. Scoring & Status ---
+        // Status
         Pack(GetAndResetReward(), ref o);
         Pack(db.lapCount, ref o);
         Pack(db.isCrashed ? 1 : 0, ref o);
         Pack(lidarCount, ref o);
 
-        // --- 4. Lidar (Quantized) ---
-        // Ensure offset matches the new HEADER_SIZE (88)
-        o = HEADER_SIZE;
-
+        // Lidar
+        o = HEADER_SIZE; // Safety align
         int pointsToPack = Mathf.Min(lidarCount, db.lidarRanges != null ? db.lidarRanges.Length : 0);
 
         for (int i = 0; i < pointsToPack; i++)
@@ -146,13 +211,12 @@ public class UDPTunnel : MonoBehaviour
         try
         {
             udpClient.Send(sendPayload, sendPayload.Length, remoteEndPoint);
-            db.isCrashed = false;
+            // Clear crash flag after sending so we don't spam it
+            if (db.isCrashed) db.isCrashed = false;
         }
-        catch { /* Transient network error */ }
+        catch { }
     }
 
-    // --- Helpers ---
-    // Overload for uint (Sequence ID)
     private void Pack(uint v, ref int o) { Buffer.BlockCopy(BitConverter.GetBytes(v), 0, sendPayload, o, 4); o += 4; }
     private void Pack(float v, ref int o) { Buffer.BlockCopy(BitConverter.GetBytes(v), 0, sendPayload, o, 4); o += 4; }
     private void Pack(int v, ref int o) { Buffer.BlockCopy(BitConverter.GetBytes(v), 0, sendPayload, o, 4); o += 4; }
@@ -166,29 +230,18 @@ public class UDPTunnel : MonoBehaviour
             IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
             byte[] b = udpClient.EndReceive(ar, ref ip);
 
-            // Basic packet validation
             if (b.Length >= 8)
             {
                 float steer = BitConverter.ToSingle(b, 0);
                 float throttle = BitConverter.ToSingle(b, 4);
 
-                // --- Input Handling ---
-                // We pass this to the bridge, which the TimeStepManager will eventually read
-                DataBridge.Instance.steering = steer;
-                DataBridge.Instance.throttle = throttle;
-
-                // --- Trigger Manual Step (If in Manual Mode) ---
-                // This is the CRITICAL link for your TimeStepManager
-                if (timeStepManager != null && timeStepManager.mode == TimeStepManager.ControlMode.Manual)
+                // --- THREAD SAFE HANDOFF ---
+                // Do NOT call Unity API here. Just store the data.
+                lock (_lock)
                 {
-                    // Trigger the physics step immediately upon receiving the command
-                    timeStepManager.StepManual(timeStepManager.fixedStepSize);
-                }
-
-                // Reset Check
-                if (sceneResetObject != null && steer >= 100.0f && throttle >= 100.0f)
-                {
-                    sceneResetObject.ResetCurrentScene();
+                    _pendingSteer = steer;
+                    _pendingThrottle = throttle;
+                    _hasNewCommand = true;
                 }
             }
         }
@@ -198,8 +251,7 @@ public class UDPTunnel : MonoBehaviour
         {
             if (isConnected && udpClient != null)
             {
-                try { udpClient.BeginReceive(OnReceive, null); }
-                catch { }
+                try { udpClient.BeginReceive(OnReceive, null); } catch { }
             }
         }
     }
@@ -207,14 +259,11 @@ public class UDPTunnel : MonoBehaviour
     private void StopConnection()
     {
         isConnected = false;
-        StopAllCoroutines();
-
         if (udpClient != null)
         {
             udpClient.Close();
             udpClient = null;
         }
-
         if (buttonLabel != null) buttonLabel.text = "Connect";
         Debug.Log("UDP Tunnel Disconnected.");
     }

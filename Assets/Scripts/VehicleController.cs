@@ -25,6 +25,11 @@ public class VehicleController : MonoBehaviour, ITimeStepper
     public float crashPenalty = -50.0f; // Increased penalty for RL training
     private float lastResetTime;
 
+    [Tooltip("Idle penalty.")]
+    public float idlePenalty = -0.1f;
+    [Tooltip("Move forward motivation.")]
+    public float forwardMotivation = 0.1f;
+
     private WheelControl[] wheels;
     private Rigidbody rigidBody;
     private CarInputActions carControls;
@@ -101,6 +106,8 @@ public class VehicleController : MonoBehaviour, ITimeStepper
     {
         if (DataBridge.Instance == null) return;
 
+        UDPTunnel.Instance.AddReward(idlePenalty);
+
         float vInput, hInput;
 
         // 1. INPUT SELECTION
@@ -154,6 +161,11 @@ public class VehicleController : MonoBehaviour, ITimeStepper
         DataBridge.Instance.appliedWheelTorque = motorOut;
         DataBridge.Instance.steeringAngleRad = currentSteerAngle * Mathf.Deg2Rad;
         DataBridge.Instance.speedMS = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
+
+        if (DataBridge.Instance.throttle > 0.01)
+        {
+            UDPTunnel.Instance.AddReward(forwardMotivation);
+        }
 
         // 8. FLIP CHECK
         if (Vector3.Dot(transform.up, Vector3.up) < 0.25f)

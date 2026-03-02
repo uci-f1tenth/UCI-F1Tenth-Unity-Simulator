@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CheckpointManager : MonoBehaviour
+public class CheckpointManager : MonoBehaviour, ITimeStepper
 {
     [Header("Track Configuration")]
     [Tooltip("Add checkpoints in order. The last one is the Finish Line.")]
@@ -42,7 +42,7 @@ public class CheckpointManager : MonoBehaviour
             DataBridge.Instance.bestLapTime = float.MaxValue;
     }
 
-    public void TimeStep(float dt)
+    public void TimeStep()
     {
         if (DataBridge.Instance == null) return;
         DataBridge.Instance.currentLapTime = TimeStepManager.fixedTime - lapStartTime;
