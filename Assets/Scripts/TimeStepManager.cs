@@ -25,6 +25,13 @@ public class TimeStepManager : MonoBehaviour
     // Cache the list to avoid finding objects every frame
     private List<ITimeStepper> steppers = new List<ITimeStepper>();
 
+    // Called whenever the UI Checkbox is clicked
+    public void OnToggleChanged(bool isAutomatic)
+    {
+        mode = isAutomatic ? ControlMode.Automatic : ControlMode.Manual;
+        UpdatePhysicsMode();
+    }
+
     void Awake()
     {
         // Initialize fixedDeltaTime from Project Settings

@@ -157,51 +157,49 @@ public class TCPTunnel : MonoBehaviour
     // Background Thread: Waits for client, then reads data loop
     private void ListenLoop()
     {
-        try
+        while (isRunning)
         {
-            // 1. Wait for a client (Blocking call, but we are on a thread)
-            connectedClient = server.AcceptTcpClient();
-
-            // Critical for Low Latency (Disables Nagle's Algorithm)
-            connectedClient.NoDelay = true;
-
-            stream = connectedClient.GetStream();
-            Debug.Log("[TCP] Python Client Connected!");
-
-            // 2. Read Loop
-            while (isRunning && connectedClient.Connected)
+            try
             {
-                // We expect exactly 8 bytes (float steer, float throttle)
-                int bytesRead = 0;
-                while (bytesRead < 8)
-                {
-                    int r = stream.Read(receiveBuffer, bytesRead, 8 - bytesRead);
-                    if (r == 0) throw new IOException("Client disconnected"); // Socket closed
-                    bytesRead += r;
-                }
+                Debug.Log("[TCP] Waiting for a client to connect...");
+                connectedClient = server.AcceptTcpClient();
+                connectedClient.NoDelay = true;
+                stream = connectedClient.GetStream();
+                Debug.Log("[TCP] Python Client Connected!");
 
-                // Convert bytes to floats
-                float steer = BitConverter.ToSingle(receiveBuffer, 0);
-                float throttle = BitConverter.ToSingle(receiveBuffer, 4);
-
-                // Pass to Main Thread
-                lock (_lock)
+                // Nested loop to handle the active connection
+                while (isRunning && connectedClient.Connected)
                 {
-                    _pendingSteer = steer;
-                    _pendingThrottle = throttle;
-                    _hasNewCommand = true;
+                    int bytesRead = 0;
+                    // Read 8 bytes (2 floats)
+                    while (bytesRead < 8)
+                    {
+                        int r = stream.Read(receiveBuffer, bytesRead, 8 - bytesRead);
+                        if (r == 0) throw new IOException("Client disconnected");
+                        bytesRead += r;
+                    }
+
+                    float steer = BitConverter.ToSingle(receiveBuffer, 0);
+                    float throttle = BitConverter.ToSingle(receiveBuffer, 4);
+
+                    lock (_lock)
+                    {
+                        _pendingSteer = steer;
+                        _pendingThrottle = throttle;
+                        _hasNewCommand = true;
+                    }
                 }
             }
-        }
-        catch (Exception e)
-        {
-            // This happens normally when we stop the server or client disconnects
-            if (isRunning) Debug.LogWarning($"[TCP] Connection Loop Info: {e.Message}");
-        }
-        finally
-        {
-            // Cleanup logic if the loop breaks
-            DisconnectClient();
+            catch (Exception e)
+            {
+                if (isRunning)
+                    Debug.Log($"[TCP] Client lost ({e.Message}). Waiting for reconnect...");
+            }
+            finally
+            {
+                // Clean up the specific client, but keep the outer 'isRunning' loop going
+                DisconnectClient();
+            }
         }
     }
 
