@@ -672,7 +672,7 @@ GameObject:
   - component: {fileID: 172425080}
   - component: {fileID: 172425082}
   m_Layer: 0
-  m_Name: UDP Data and Time Bridge
+  m_Name: Networking Bridge
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -692,9 +692,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   sceneResetObject: {fileID: 1838572742}
   timeStepManager: {fileID: 172425083}
-  ipInput: {fileID: 1366543132}
-  sendPortInput: {fileID: 553708094}
-  recvPortInput: {fileID: 709046702}
+  portInput: {fileID: 553708094}
   buttonLabel: {fileID: 2053822166}
   isConnected: 0
 --- !u!4 &172425081
@@ -52908,7 +52906,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &709046701
 RectTransform:
   m_ObjectHideFlags: 0
@@ -59679,6 +59677,8 @@ MonoBehaviour:
   wallTag: Wall
   resetCooldown: 0.1
   crashPenalty: -50
+  idlePenalty: -0.1
+  forwardMotivation: 0.1
 --- !u!54 &1594770851
 Rigidbody:
   m_ObjectHideFlags: 0

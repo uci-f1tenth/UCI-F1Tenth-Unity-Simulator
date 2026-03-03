@@ -107,9 +107,9 @@ public class TimeStepManager : MonoBehaviour
                 yield return new WaitForFixedUpdate();
 
                 // Check for connectivity before sending
-                if (UDPTunnel.Instance != null && UDPTunnel.Instance.isConnected)
+                if (TCPTunnel.Instance != null && TCPTunnel.Instance.isConnected)
                 {
-                    UDPTunnel.Instance.SendTelemetry();
+                    TCPTunnel.Instance.SendTelemetry();
                 }
             }
             else
@@ -136,7 +136,7 @@ public class TimeStepManager : MonoBehaviour
         Physics.SyncTransforms();
 
         // Send telemetry after everything settles
-        UDPTunnel.Instance.SendTelemetry();
+        TCPTunnel.Instance.SendTelemetry();
     }
 
     // Shared logic for both modes

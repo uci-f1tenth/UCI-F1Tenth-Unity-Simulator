@@ -71,9 +71,9 @@ public class VehicleController : MonoBehaviour, ITimeStepper
             }
 
             // 2. Add Thread-Safe Penalty
-            if (UDPTunnel.Instance != null)
+            if (TCPTunnel.Instance != null)
             {
-                UDPTunnel.Instance.AddReward(crashPenalty);
+                TCPTunnel.Instance.AddReward(crashPenalty);
             }
 
             // 3. Physical Teleport
@@ -106,7 +106,7 @@ public class VehicleController : MonoBehaviour, ITimeStepper
     {
         if (DataBridge.Instance == null) return;
 
-        UDPTunnel.Instance.AddReward(idlePenalty);
+        TCPTunnel.Instance.AddReward(idlePenalty);
 
         float vInput, hInput;
 
@@ -164,7 +164,7 @@ public class VehicleController : MonoBehaviour, ITimeStepper
 
         if (DataBridge.Instance.throttle > 0.01)
         {
-            UDPTunnel.Instance.AddReward(forwardMotivation);
+            TCPTunnel.Instance.AddReward(forwardMotivation);
         }
 
         // 8. FLIP CHECK

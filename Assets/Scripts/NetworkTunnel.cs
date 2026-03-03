@@ -4,30 +4,39 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.IO;
 
-public class UDPTunnel : MonoBehaviour
+public class TCPTunnel : MonoBehaviour
 {
-    public static UDPTunnel Instance { get; private set; }
+    public static TCPTunnel Instance { get; private set; }
 
     [Header("References")]
     public SceneReset sceneResetObject;
     public TimeStepManager timeStepManager;
 
     [Header("Network Settings")]
-    public TMP_InputField ipInput;
-    public TMP_InputField sendPortInput, recvPortInput;
+    // TCP only needs one port (Server Port). 
+    // We ignore SendPort/IP because we reply to whoever connects to us.
+    public TMP_InputField portInput;
     public TextMeshProUGUI buttonLabel;
 
     // Networking
-    private UdpClient udpClient;
-    private IPEndPoint remoteEndPoint;
+    private TcpListener server;
+    private TcpClient connectedClient;
+    private NetworkStream stream;
+    private Thread receiveThread;
+
     public bool isConnected = false;
+    private bool isRunning = false;
 
     // Data Protocol
     // 22 items * 4 bytes = 88 bytes
     private const int HEADER_SIZE = 88;
     private const float MAX_LIDAR_DIST = 20f;
     private byte[] sendPayload;
+    // Buffer for reading incoming controls (2 floats = 8 bytes)
+    private byte[] receiveBuffer = new byte[8];
+
     private int lidarCount = 0;
     private uint sequenceId = 0;
 
@@ -73,13 +82,12 @@ public class UDPTunnel : MonoBehaviour
 
     private void ProcessControlCommand(float steer, float throttle)
     {
-        // RESET SIGNAL: If inputs are effectively "Infinity" (>= 100), reset.
+        // RESET SIGNAL: Logic preserved from your snippet
         /*
         if (sceneResetObject != null && steer >= 100f && throttle >= 100f)
         {
             sceneResetObject.ResetCurrentScene();
-            // Optional: Send a 'fresh' telemetry packet after reset so Python knows we are back at start
-            sequenceId = 0; // Reset sequence too?
+            sequenceId = 0; 
             return;
         }
         */
@@ -92,9 +100,9 @@ public class UDPTunnel : MonoBehaviour
         }
 
         // PHYSICS STEP (Manual Mode)
+        // This calculates physics for exactly one dt and typically triggers SendTelemetry()
         if (timeStepManager != null && timeStepManager.mode == TimeStepManager.ControlMode.Manual)
         {
-            // This calculates physics for exactly one dt
             timeStepManager.StepManual(timeStepManager.fixedStepSize);
         }
     }
@@ -109,65 +117,103 @@ public class UDPTunnel : MonoBehaviour
 
     public void ToggleConnection()
     {
-        if (!isConnected) StartConnection();
-        else StopConnection();
+        if (!isConnected) StartServer();
+        else StopServer();
     }
 
-    private void StartConnection()
+    private void StartServer()
     {
         try
         {
+            // Prepare Lidar & Payload
             var lidar = FindFirstObjectByType<LidarSensor2D>();
             lidarCount = lidar != null ? lidar.numberOfPoints : 0;
-
-            // Allocation
             sendPayload = new byte[HEADER_SIZE + (lidarCount * 2)];
             sequenceId = 0;
 
-            udpClient = new UdpClient();
-
-            // --- FIX FOR "EXISTING CONNECTION CLOSED" ERROR ---
-            // SIO_UDP_CONNRESET = -1744830452
-            // This prevents the socket from closing if Python stops listening briefly.
-            try
-            {
-                udpClient.Client.IOControl((IOControlCode)(-1744830452), new byte[] { 0 }, null);
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[UDP] Could not set SIO_UDP_CONNRESET: {e.Message}");
-            }
-
-            udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-
-            int rPort = int.Parse(recvPortInput.text);
-            udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, rPort));
-
-            string ip = ipInput.text;
-            int sPort = int.Parse(sendPortInput.text);
-            remoteEndPoint = new IPEndPoint(IPAddress.Parse(ip), sPort);
-
-            udpClient.BeginReceive(OnReceive, null);
+            // Start TCP Listener
+            int port = int.Parse(portInput.text);
+            server = new TcpListener(IPAddress.Any, port);
+            server.Start();
 
             isConnected = true;
-            if (buttonLabel != null) buttonLabel.text = "Disconnect";
-            Debug.Log($"[UDP] Listening on {rPort}, Target: {ip}:{sPort}");
+            isRunning = true;
+
+            // Run the listener/reader in a background thread so Unity doesn't freeze
+            receiveThread = new Thread(ListenLoop);
+            receiveThread.IsBackground = true;
+            receiveThread.Start();
+
+            if (buttonLabel != null) buttonLabel.text = "Stop Server";
+            Debug.Log($"[TCP] Server started on port {port}. Waiting for Python...");
         }
         catch (Exception e)
         {
-            Debug.LogError($"[UDP] Connection Failed: {e.Message}");
-            StopConnection();
+            Debug.LogError($"[TCP] Start Failed: {e.Message}");
+            StopServer();
+        }
+    }
+
+    // Background Thread: Waits for client, then reads data loop
+    private void ListenLoop()
+    {
+        try
+        {
+            // 1. Wait for a client (Blocking call, but we are on a thread)
+            connectedClient = server.AcceptTcpClient();
+
+            // Critical for Low Latency (Disables Nagle's Algorithm)
+            connectedClient.NoDelay = true;
+
+            stream = connectedClient.GetStream();
+            Debug.Log("[TCP] Python Client Connected!");
+
+            // 2. Read Loop
+            while (isRunning && connectedClient.Connected)
+            {
+                // We expect exactly 8 bytes (float steer, float throttle)
+                int bytesRead = 0;
+                while (bytesRead < 8)
+                {
+                    int r = stream.Read(receiveBuffer, bytesRead, 8 - bytesRead);
+                    if (r == 0) throw new IOException("Client disconnected"); // Socket closed
+                    bytesRead += r;
+                }
+
+                // Convert bytes to floats
+                float steer = BitConverter.ToSingle(receiveBuffer, 0);
+                float throttle = BitConverter.ToSingle(receiveBuffer, 4);
+
+                // Pass to Main Thread
+                lock (_lock)
+                {
+                    _pendingSteer = steer;
+                    _pendingThrottle = throttle;
+                    _hasNewCommand = true;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // This happens normally when we stop the server or client disconnects
+            if (isRunning) Debug.LogWarning($"[TCP] Connection Loop Info: {e.Message}");
+        }
+        finally
+        {
+            // Cleanup logic if the loop breaks
+            DisconnectClient();
         }
     }
 
     public void SendTelemetry()
     {
-        if (!isConnected || udpClient == null) return;
+        // Only write if we have a valid, open connection
+        if (!isConnected || stream == null || !stream.CanWrite) return;
 
-        int o = 0;
+        int o = 0; // Packet offset
         var db = DataBridge.Instance;
 
-        // --- PACKING (88 Bytes Header) ---
+        // --- PACKING (Same Logic) ---
         Pack(sequenceId, ref o);
         sequenceId++;
 
@@ -197,7 +243,7 @@ public class UDPTunnel : MonoBehaviour
         Pack(lidarCount, ref o);
 
         // Lidar
-        o = HEADER_SIZE; // Safety align
+        o = HEADER_SIZE;
         int pointsToPack = Mathf.Min(lidarCount, db.lidarRanges != null ? db.lidarRanges.Length : 0);
 
         for (int i = 0; i < pointsToPack; i++)
@@ -210,64 +256,53 @@ public class UDPTunnel : MonoBehaviour
 
         try
         {
-            udpClient.Send(sendPayload, sendPayload.Length, remoteEndPoint);
-            // Clear crash flag after sending so we don't spam it
+            // TCP WRITE
+            stream.Write(sendPayload, 0, sendPayload.Length);
+
+            // Clear crash flag
             if (db.isCrashed) db.isCrashed = false;
         }
-        catch { }
+        catch (Exception)
+        {
+            // If write fails, the client probably disconnected. 
+            // The Read thread will catch the exception and clean up.
+        }
     }
 
     private void Pack(uint v, ref int o) { Buffer.BlockCopy(BitConverter.GetBytes(v), 0, sendPayload, o, 4); o += 4; }
     private void Pack(float v, ref int o) { Buffer.BlockCopy(BitConverter.GetBytes(v), 0, sendPayload, o, 4); o += 4; }
     private void Pack(int v, ref int o) { Buffer.BlockCopy(BitConverter.GetBytes(v), 0, sendPayload, o, 4); o += 4; }
 
-    private void OnReceive(IAsyncResult ar)
+    private void DisconnectClient()
     {
-        if (!isConnected || udpClient == null) return;
-
-        try
-        {
-            IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
-            byte[] b = udpClient.EndReceive(ar, ref ip);
-
-            if (b.Length >= 8)
-            {
-                float steer = BitConverter.ToSingle(b, 0);
-                float throttle = BitConverter.ToSingle(b, 4);
-
-                // --- THREAD SAFE HANDOFF ---
-                // Do NOT call Unity API here. Just store the data.
-                lock (_lock)
-                {
-                    _pendingSteer = steer;
-                    _pendingThrottle = throttle;
-                    _hasNewCommand = true;
-                }
-            }
-        }
-        catch (ObjectDisposedException) { return; }
-        catch (Exception e) { Debug.LogWarning($"UDP Recv Error: {e.Message}"); }
-        finally
-        {
-            if (isConnected && udpClient != null)
-            {
-                try { udpClient.BeginReceive(OnReceive, null); } catch { }
-            }
-        }
+        if (stream != null) { stream.Close(); stream = null; }
+        if (connectedClient != null) { connectedClient.Close(); connectedClient = null; }
+        Debug.Log("[TCP] Client Disconnected.");
     }
 
-    private void StopConnection()
+    private void StopServer()
     {
+        isRunning = false;
         isConnected = false;
-        if (udpClient != null)
+
+        DisconnectClient();
+
+        if (server != null)
         {
-            udpClient.Close();
-            udpClient = null;
+            server.Stop();
+            server = null;
         }
-        if (buttonLabel != null) buttonLabel.text = "Connect";
-        Debug.Log("UDP Tunnel Disconnected.");
+
+        // Abort the thread if it's still stuck waiting for a client
+        if (receiveThread != null && receiveThread.IsAlive)
+        {
+            receiveThread.Abort();
+        }
+
+        if (buttonLabel != null) buttonLabel.text = "Start Server";
+        Debug.Log("TCP Server Stopped.");
     }
 
-    private void OnDisable() => StopConnection();
-    private void OnApplicationQuit() => StopConnection();
+    private void OnDisable() => StopServer();
+    private void OnApplicationQuit() => StopServer();
 }

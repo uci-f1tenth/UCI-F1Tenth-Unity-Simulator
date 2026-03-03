@@ -71,7 +71,7 @@ public class CheckpointManager : MonoBehaviour, ITimeStepper
             Debug.Log($"<color=green>Checkpoint {index} reached!</color>");
 
             // Use Variable Reward
-            UDPTunnel.Instance.AddReward(checkpointPassReward);
+            TCPTunnel.Instance.AddReward(checkpointPassReward);
 
             lastPassedCheckpointTransform = checkpointObjects[index].transform;
             nextCheckpointIndex++;
@@ -92,7 +92,7 @@ public class CheckpointManager : MonoBehaviour, ITimeStepper
             Debug.Log($"<color=red>Wrong Checkpoint! Need {nextCheckpointIndex}, but hit {index}</color>");
 
             // Use Variable Penalty
-            UDPTunnel.Instance.AddReward(wrongCheckpointPenalty);
+            TCPTunnel.Instance.AddReward(wrongCheckpointPenalty);
         }
     }
 
@@ -103,7 +103,7 @@ public class CheckpointManager : MonoBehaviour, ITimeStepper
         DataBridge.Instance.lastLapTime = lapTime;
 
         // 1. Give standard lap completion reward
-        UDPTunnel.Instance.AddReward(lapCompletionReward);
+        TCPTunnel.Instance.AddReward(lapCompletionReward);
 
         // 2. Check for Best Lap
         if (lapTime < DataBridge.Instance.bestLapTime)
@@ -112,7 +112,7 @@ public class CheckpointManager : MonoBehaviour, ITimeStepper
             Debug.Log($"<color=#FFD700>New Best Lap! {lapTime:F3}s</color>");
 
             // Use Variable Best Lap Bonus
-            UDPTunnel.Instance.AddReward(bestLapBonus);
+            TCPTunnel.Instance.AddReward(bestLapBonus);
         }
 
         Debug.Log($"<color=#FFD700>Lap {DataBridge.Instance.lapCount} Complete! Time: {lapTime:F3}s</color>");
