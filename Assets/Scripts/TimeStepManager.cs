@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 
 // Execution Order -100 ensures this initializes BEFORE the Car/Bridge
@@ -21,6 +22,7 @@ public class TimeStepManager : MonoBehaviour
 
     [Tooltip("The time step used when in Manual mode. Initialized from Project Settings.")]
     public float fixedStepSize;
+    public TMP_InputField timestepInput;
 
     // Cache the list to avoid finding objects every frame
     private List<ITimeStepper> steppers = new List<ITimeStepper>();
@@ -43,6 +45,7 @@ public class TimeStepManager : MonoBehaviour
         if (fixedStepSize <= 0)
         {
             fixedStepSize = Time.fixedDeltaTime;
+            timestepInput.text = fixedStepSize.ToString();
         }
 
         // 2. Find all objects that need stepping
@@ -96,6 +99,10 @@ public class TimeStepManager : MonoBehaviour
     // Unity's Internal Loop (Runs only if mode == Automatic)
     void FixedUpdate()
     {
+        fixedStepSize = float.Parse(timestepInput.text);
+        if (fixedStepSize < 0f)
+            fixedStepSize = 0.000005f;
+
         if (mode == ControlMode.Automatic)
         {
             // In Auto mode, we pass the Unity clock time

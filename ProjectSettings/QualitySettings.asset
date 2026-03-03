@@ -4,7 +4,7 @@
 QualitySettings:
   m_ObjectHideFlags: 0
   serializedVersion: 5
-  m_CurrentQuality: 1
+  m_CurrentQuality: 0
   m_QualitySettings:
   - serializedVersion: 5
     name: Mobile
@@ -58,8 +58,7 @@ QualitySettings:
     terrainBillboardStart: 50
     terrainFadeLength: 5
     terrainMaxTrees: 50
-    excludedTargetPlatforms:
-    - Standalone
+    excludedTargetPlatforms: []
   - serializedVersion: 5
     name: PC
     pixelLightCount: 2
@@ -115,6 +114,7 @@ QualitySettings:
     excludedTargetPlatforms:
     - Android
     - iPhone
+    - Standalone
   - serializedVersion: 5
     name: Simulator
     pixelLightCount: 2
@@ -183,7 +183,7 @@ QualitySettings:
     PS5: 1
     Server: 0
     Stadia: 0
-    Standalone: 1
+    Standalone: 0
     WebGL: 0
     Windows Store Apps: 0
     XboxOne: 0

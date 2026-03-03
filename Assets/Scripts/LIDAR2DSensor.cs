@@ -110,85 +110,108 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
 
     public void TimeStep()
     {
+        // 0. Timer Logic
         float interval = 1f / updateRateHz;
-        scanTimer += TimeStepManager.fixedDeltaTime;
+        scanTimer += TimeStepManager.fixedDeltaTime; // Use fixedDeltaTime for stability
         if (scanTimer < interval) return;
         scanTimer = 0;
 
         Profiler.BeginSample("Lidar.ExecuteBatchScan");
 
-        // 1. Prepare
+        // 1. Prepare Commands (Fast, just copying structs)
         Profiler.BeginSample("Lidar.PrepCommands");
         Vector3 origin = transform.position;
         Quaternion rotation = transform.rotation;
+
         for (int i = 0; i < numberOfPoints; i++)
         {
+            // Simple rotation, no Trig
             Vector3 worldDir = rotation * localDirections[i];
             commands[i] = new RaycastCommand(origin, worldDir, qParams, maxRange);
         }
         Profiler.EndSample();
 
-        // 2. Schedule
+        // 2. Schedule & Wait (The Physics Engine does the work here)
         Profiler.BeginSample("Lidar.ScheduleAndComplete");
         JobHandle handle = RaycastCommand.ScheduleBatch(commands, results, 1, default);
-        handle.Complete();
+        handle.Complete(); // Main Thread waits here
         Profiler.EndSample();
 
-        // 3. Process
+        // 3. Process Results (OPTIMIZED)
         Profiler.BeginSample("Lidar.ProcessResults");
-        Transform myRoot = transform.root;
+
+        // OPTIMIZATION: Removed 'Transform myRoot = transform.root;'
+        // We rely on Physics Layers to ignore the car, avoiding the hierarchy walk.
 
         for (int i = 0; i < numberOfPoints; i++)
         {
             RaycastHit hit = results[i];
 
-            // ... [Hit Logic] ...
+            // OPTIMIZATION: Only access .collider to check null.
+            // If Layer Mask is set correctly, anything we hit is valid.
             bool hitSomething = hit.collider != null;
-            if (hitSomething && ignoreSelf && hit.collider.transform.root == myRoot) hitSomething = false;
 
-            float finalDist = hitSomething ? hit.distance : maxRange; // Simplified for brevity
+            // Optional: Random Dropout (Sensor Realism)
+            if (hitSomething && dropoutProbability > 0 && UnityEngine.Random.value < dropoutProbability)
+                hitSomething = false;
+
+            float finalDist;
+            if (!hitSomething)
+            {
+                finalDist = maxRange;
+            }
+            else
+            {
+                // Simple Noise: Uniform is faster than Gaussian and sufficient for RL
+                float noise = (UnityEngine.Random.value * 2f - 1f) * noiseSigma;
+                finalDist = Mathf.Clamp(hit.distance + noise, minRange, maxRange);
+            }
+
+            // Write to managed array for Python
             rangesManaged[i] = finalDist;
 
-            // VISUALIZATION TOGGLE LOGIC
+            // VISUALIZATION (Only runs if Toggle is ON)
             if (showVisualization)
             {
-                // We ONLY do this math if visualization is ON
                 Vector3 localDir = localDirections[i];
+
+                // Calculate color
                 float t = finalDist / maxRange;
                 Color c = Color.Lerp(nearColor, farColor, t);
 
+                // Update Mesh Buffers
                 int vIndex = i * 2;
-                meshVertices[vIndex] = Vector3.zero;
-                meshVertices[vIndex + 1] = localDir * finalDist;
+                meshVertices[vIndex] = Vector3.zero; // Start of line (at car)
+                meshVertices[vIndex + 1] = localDir * finalDist; // End of line (at hit)
                 meshColors[vIndex] = c;
                 meshColors[vIndex + 1] = c;
             }
         }
         Profiler.EndSample();
 
-        // 4. Mesh Upload
+        // 4. Mesh Upload (Only runs if visible)
         Profiler.BeginSample("Lidar.MeshUpload");
-
-        // VISUALIZATION CHECK
         if (showVisualization)
         {
             lineMesh.vertices = meshVertices;
             lineMesh.colors = meshColors;
+            // SetIndices is expensive, but necessary if point count changes (dynamic)
             lineMesh.SetIndices(meshIndices, MeshTopology.Lines, 0);
             lineMesh.RecalculateBounds();
             meshNeedsClearing = true;
         }
         else if (meshNeedsClearing)
         {
-            // If we just turned it off, clear the mesh once.
+            // If we just turned it off, clear the mesh once to remove lines from screen
             lineMesh.Clear();
             meshNeedsClearing = false;
         }
         Profiler.EndSample();
 
+        // 5. Send to Bridge
         if (DataBridge.Instance != null)
             DataBridge.Instance.lidarRanges = rangesManaged;
 
-        Profiler.EndSample();
+        Profiler.EndSample(); // End Root Sample
     }
 }
