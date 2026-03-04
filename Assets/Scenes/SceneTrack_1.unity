@@ -58937,7 +58937,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7adef12063713554b972534e9b839132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  numberOfPoints: 1080
+  numberOfPoints: 270
   minAngleRad: -2.356194
   maxAngleRad: 2.356194
   minRange: 0.01
@@ -60431,10 +60431,10 @@ MonoBehaviour:
   steeringSpeedDeg: 300
   checkpointManager: {fileID: 3469287838504866910}
   wallTag: Wall
-  resetCooldown: 0.1
+  resetCooldown: 0.05
   crashPenalty: -50
-  idlePenalty: -0.1
-  forwardMotivation: 0.1
+  idlePenalty: -1.5
+  forwardMotivation: 1
 --- !u!54 &1594770851
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -63915,10 +63915,10 @@ MonoBehaviour:
   - {fileID: 8831873287884593685}
   - {fileID: 3585056874464421319}
   respawnHeightOffset: 0
-  checkpointPassReward: 1
-  wrongCheckpointPenalty: -1
-  lapCompletionReward: 5
-  bestLapBonus: 10
+  checkpointPassReward: 10
+  wrongCheckpointPenalty: -5
+  lapCompletionReward: 50
+  bestLapBonus: 100
   showVisualizer: 1
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   finishLineColor: {r: 1, g: 0, b: 0, a: 1}
