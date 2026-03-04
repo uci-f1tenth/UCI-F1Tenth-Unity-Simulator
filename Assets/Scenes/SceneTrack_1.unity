@@ -58940,13 +58940,12 @@ MonoBehaviour:
   numberOfPoints: 1080
   minAngleRad: -2.356194
   maxAngleRad: 2.356194
-  minRange: 0.1
-  maxRange: 10
+  minRange: 0.01
+  maxRange: 20
   updateRateHz: 40
   showVisualization: 1
   nearColor: {r: 1, g: 0, b: 0, a: 1}
   farColor: {r: 0, g: 1, b: 0, a: 1}
-  ignoreSelf: 1
   detectionMask:
     serializedVersion: 2
     m_Bits: 8
