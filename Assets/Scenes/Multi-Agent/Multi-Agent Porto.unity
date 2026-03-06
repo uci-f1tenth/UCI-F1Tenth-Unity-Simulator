@@ -5987,8 +5987,8 @@ GameObject:
   - component: {fileID: 901724733}
   - component: {fileID: 901724735}
   - component: {fileID: 901724734}
-  - component: {fileID: 901724737}
   - component: {fileID: 901724738}
+  - component: {fileID: 901724737}
   m_Layer: 5
   m_Name: Info Panel
   m_TagString: Untagged
@@ -6119,6 +6119,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3dcc843229db7d4b8b7251cb6a3f7b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  mainCamera: {fileID: 1940930557}
+  cameraModeText: {fileID: 2045055740}
+  smoothSpeed: 36.9
+  cameraViews:
+  - name: Rear Chase
+    mode: 0
+    localPosition: {x: 0, y: 1, z: -1}
+    lookAtOffset: {x: 0, y: 0, z: 1}
+    staticAnchor: {fileID: 0}
+  - name: Top Down
+    mode: 0
+    localPosition: {x: 0, y: 3, z: 0}
+    lookAtOffset: {x: 0, y: 0, z: 0.0005}
+    staticAnchor: {fileID: 0}
+  - name: Bird's Eye
+    mode: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    lookAtOffset: {x: 0, y: 0, z: 0}
+    staticAnchor: {fileID: 1111082243}
   masterToggle: {fileID: 610421776}
   velocityScale: 0.5
   accelScale: 0.2
@@ -7211,6 +7230,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1065827760}
   m_CullTransparentMesh: 1
+--- !u!1 &1111082242
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1111082243}
+  m_Layer: 0
+  m_Name: Bird's Eye
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &1111082243
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1111082242}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 8, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1176310834}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!1 &1126450824
 GameObject:
   m_ObjectHideFlags: 0
@@ -7613,6 +7663,38 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1165655810}
   m_CullTransparentMesh: 1
+--- !u!1 &1176310833
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1176310834}
+  m_Layer: 0
+  m_Name: Camera Positions
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &1176310834
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1176310833}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1111082243}
+  m_Father: {fileID: 1838572739}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1177223103
 GameObject:
   m_ObjectHideFlags: 0
@@ -12659,6 +12741,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1126450825}
+  - {fileID: 1176310834}
   - {fileID: 1250742112}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -13738,7 +13821,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1978952658}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 901724738}
+        m_TargetAssemblyTypeName: MAAgentVisualizer, Assembly-CSharp
+        m_MethodName: NextCamera
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1978952658
 MonoBehaviour:
   m_ObjectHideFlags: 0
