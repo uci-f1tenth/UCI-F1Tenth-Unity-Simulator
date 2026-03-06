@@ -61,9 +61,41 @@ public class MATimeStepManager : MonoBehaviour
 
     private void Start()
     {
+        // 1. Initialize the InputField text to match current settings
+        if (timestepInput != null)
+        {
+            timestepInput.text = fixedStepSize.ToString("F4");
+
+            // 2. Add the listener via code (safer than manual Inspector linking)
+            timestepInput.onEndEdit.AddListener(OnTimestepEntryEnd);
+        }
+
         // Start the heartbeat loop
         if (heartbeatCoroutine != null) StopCoroutine(heartbeatCoroutine);
         heartbeatCoroutine = StartCoroutine(TelemetryHeartbeat());
+    }
+
+    /// <summary>
+    /// Triggered only when the user finishes editing the UI field.
+    /// </summary>
+    public void OnTimestepEntryEnd(string input)
+    {
+        if (float.TryParse(input, out float val))
+        {
+            // Clamp to a tiny positive value to prevent physics crashes (dt cannot be 0)
+            fixedStepSize = Mathf.Max(val, 0.0001f);
+
+            // If we are in Automatic mode, we actually need to update Unity's engine
+            if (mode == ControlMode.Automatic)
+            {
+                Time.fixedDeltaTime = fixedStepSize;
+            }
+
+            Debug.Log($"<color=cyan>TimeStepManager: Step size updated to {fixedStepSize}s</color>");
+        }
+
+        // Refresh the text in case it was clamped or invalid
+        timestepInput.text = fixedStepSize.ToString("F4");
     }
 
     // Called whenever the UI Checkbox is clicked
@@ -115,12 +147,6 @@ public class MATimeStepManager : MonoBehaviour
     // Unity's Internal Loop (Runs only if mode == Automatic)
     void FixedUpdate()
     {
-        // Update step size from UI if needed
-        if (timestepInput != null && float.TryParse(timestepInput.text, out float val))
-        {
-            fixedStepSize = val > 0 ? val : 0.000005f;
-        }
-
         if (mode == ControlMode.Automatic)
         {
             // In Auto mode, we simply mirror Unity's internal clock
