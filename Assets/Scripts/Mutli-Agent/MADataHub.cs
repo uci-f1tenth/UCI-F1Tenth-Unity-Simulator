@@ -11,7 +11,7 @@ public class MADataHub : MonoBehaviour, ITimeStepper
     [Tooltip("Number of agents to allocate buffers for")]
     public int numberOfAgents = 2;
 
-    // Common variables that will be gathered from the agent prefab
+    [Header("Network Configuration")]
     public int lidarResolution = 270;
 
     [Header("Global Performance")]

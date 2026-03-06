@@ -9683,7 +9683,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 7
+  m_VersionIndex: 19
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -19371,7 +19371,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 7
+  m_VersionIndex: 19
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -29059,7 +29059,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 7
+  m_VersionIndex: 19
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -29073,8 +29073,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7544085586339758838}
-  - component: {fileID: 8627941369995938971}
   - component: {fileID: 8257676455678541547}
+  - component: {fileID: 6455980939187864627}
   m_Layer: 6
   m_Name: RL Wheel Collider
   m_TagString: Untagged
@@ -29097,22 +29097,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1335837957874490444}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8627941369995938971
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2346936020922531597}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2bc6b9539e6a051419c45b3e6119a002, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WheelControl
-  wheelModel: {fileID: 7638231117122448103}
-  WheelCollider: {fileID: 0}
-  steerable: 0
-  motorized: 1
 --- !u!146 &8257676455678541547
 WheelCollider:
   m_ObjectHideFlags: 0
@@ -29152,6 +29136,22 @@ WheelCollider:
   m_LayerOverridePriority: 0
   m_Enabled: 1
   m_ProvidesContacts: 0
+--- !u!114 &6455980939187864627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2346936020922531597}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0914a86b10537049bbf20a486f6a12b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  wheelModel: {fileID: 0}
+  steerable: 0
+  motorized: 1
+  WheelCollider: {fileID: 0}
 --- !u!1 &2625576890859802361
 GameObject:
   m_ObjectHideFlags: 0
@@ -38835,7 +38835,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 7
+  m_VersionIndex: 19
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -38895,8 +38895,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6738942430781569199}
-  - component: {fileID: 196866779222560034}
   - component: {fileID: 1915690971660102324}
+  - component: {fileID: 357877555083120884}
   m_Layer: 6
   m_Name: FR Wheel Collider
   m_TagString: Untagged
@@ -38919,22 +38919,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1335837957874490444}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &196866779222560034
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3963203907946487035}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2bc6b9539e6a051419c45b3e6119a002, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WheelControl
-  wheelModel: {fileID: 6212127789825556029}
-  WheelCollider: {fileID: 0}
-  steerable: 1
-  motorized: 1
 --- !u!146 &1915690971660102324
 WheelCollider:
   m_ObjectHideFlags: 0
@@ -38974,6 +38958,22 @@ WheelCollider:
   m_LayerOverridePriority: 0
   m_Enabled: 1
   m_ProvidesContacts: 0
+--- !u!114 &357877555083120884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3963203907946487035}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0914a86b10537049bbf20a486f6a12b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  wheelModel: {fileID: 0}
+  steerable: 1
+  motorized: 1
+  WheelCollider: {fileID: 0}
 --- !u!1 &4811540137891773168
 GameObject:
   m_ObjectHideFlags: 0
@@ -50293,7 +50293,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 7
+  m_VersionIndex: 19
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -50494,8 +50494,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7152384914757118610}
-  - component: {fileID: 3094942685428738980}
   - component: {fileID: 8439499643121689981}
+  - component: {fileID: 2405170461432387131}
   m_Layer: 6
   m_Name: FL Wheel Collider
   m_TagString: Untagged
@@ -50518,22 +50518,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1335837957874490444}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3094942685428738980
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5815493562578444284}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2bc6b9539e6a051419c45b3e6119a002, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WheelControl
-  wheelModel: {fileID: 4124984584053871298}
-  WheelCollider: {fileID: 0}
-  steerable: 1
-  motorized: 1
 --- !u!146 &8439499643121689981
 WheelCollider:
   m_ObjectHideFlags: 0
@@ -50573,6 +50557,22 @@ WheelCollider:
   m_LayerOverridePriority: 0
   m_Enabled: 1
   m_ProvidesContacts: 0
+--- !u!114 &2405170461432387131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5815493562578444284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0914a86b10537049bbf20a486f6a12b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  wheelModel: {fileID: 0}
+  steerable: 1
+  motorized: 1
+  WheelCollider: {fileID: 0}
 --- !u!1 &5884858282850470999
 GameObject:
   m_ObjectHideFlags: 0
@@ -50582,8 +50582,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8445449663825928146}
-  - component: {fileID: 2652925266546284096}
   - component: {fileID: 3988210657085949568}
+  - component: {fileID: 4884512881865210155}
   m_Layer: 6
   m_Name: RR Wheel Collider
   m_TagString: Untagged
@@ -50606,22 +50606,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1335837957874490444}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2652925266546284096
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5884858282850470999}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2bc6b9539e6a051419c45b3e6119a002, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WheelControl
-  wheelModel: {fileID: 3877447089671915434}
-  WheelCollider: {fileID: 0}
-  steerable: 0
-  motorized: 1
 --- !u!146 &3988210657085949568
 WheelCollider:
   m_ObjectHideFlags: 0
@@ -50661,6 +50645,22 @@ WheelCollider:
   m_LayerOverridePriority: 0
   m_Enabled: 1
   m_ProvidesContacts: 0
+--- !u!114 &4884512881865210155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5884858282850470999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0914a86b10537049bbf20a486f6a12b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  wheelModel: {fileID: 0}
+  steerable: 0
+  motorized: 1
+  WheelCollider: {fileID: 0}
 --- !u!1 &8776094248308840066
 GameObject:
   m_ObjectHideFlags: 0
@@ -50755,6 +50755,7 @@ MonoBehaviour:
   erraticSteeringPenalty: -0.005
   crashPenalty: -50
   resetCooldown: 0.01
+  visualizeWheels: 0
 --- !u!1 &9070156215448336040
 GameObject:
   m_ObjectHideFlags: 0

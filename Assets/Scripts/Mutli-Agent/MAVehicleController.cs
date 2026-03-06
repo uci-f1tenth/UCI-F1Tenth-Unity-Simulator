@@ -28,8 +28,12 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
     public float resetCooldown = 0.1f; // Slightly increased to prevent physics jitter
     private float lastResetTime;
 
+    [Header("--- Performance Optimization ---")]
+    [Tooltip("If true, wheel meshes will sync to physics. Disable for faster training.")]
+    public bool visualizeWheels = true;
+
     // Internal Physics
-    private WheelControl[] wheels;
+    private MAWheelControl[] wheels;
     private Rigidbody rigidBody;
     private float currentSteerAngle = 0f;
 
@@ -41,7 +45,7 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
     void Start()
     {
         rigidBody = GetComponent<Rigidbody>();
-        wheels = GetComponentsInChildren<WheelControl>();
+        wheels = GetComponentsInChildren<MAWheelControl>();
 
         // Cache singletons to avoid repeated "Instance" lookups in the hot loop
         dataHub = MADataHub.Instance;
@@ -50,6 +54,10 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
 
         if (agentIndex == -1)
             Debug.LogWarning($"[MAVehicleController] Warning: Agent on {gameObject.name} has no Index assigned!");
+
+        // Find and Init the new optimized wheel scripts
+        wheels = GetComponentsInChildren<MAWheelControl>();
+        foreach (var w in wheels) w.Initialize();
 
         // Teleport to start position on load
         if (MACheckpointManager.Instance != null && agentIndex != -1)
@@ -68,8 +76,8 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
         if (dataHub == null || agentIndex == -1 || agentIndex >= dataHub.numberOfAgents) return;
 
         // 1. READ INPUTS (From DataHub)
-        float vInput = dataHub.throttle[agentIndex] = Random.Range(-1f, 1f);
-        float hInput = dataHub.steering[agentIndex] = Random.Range(-1f, 1f);
+        float vInput = dataHub.throttle[agentIndex];
+        float hInput = dataHub.steering[agentIndex];
 
         // 2. RPM TRACKING
         float avgRPM = 0;
@@ -143,6 +151,22 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
         }
     }
 
+    // =================================================================
+    //                  VISUAL UPDATE LOOP (Standard Unity Update)
+    // =================================================================
+    private void Update()
+    {
+        // OPTIMIZATION:
+        // 1. If visualizedWheels is unchecked, skip everything.
+        if (!visualizeWheels) return;
+
+        // Batch update all 4 wheels in this single function call
+        for (int i = 0; i < wheels.Length; i++)
+        {
+            wheels[i].SyncVisuals();
+        }
+    }
+
     // =================================================================================================
     //                                      RESET LOGIC
     // =================================================================================================
@@ -180,7 +204,9 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
                 Debug.LogError("No MACheckpointManager found! Cannot reset agent.");
             }
 
+#if UNITY_EDITOR
             Debug.Log($"<color=red>[Agent {agentIndex}] Crash!</color> Penalty applied.");
+#endif
         }
     }
 }

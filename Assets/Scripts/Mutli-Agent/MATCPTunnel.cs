@@ -163,7 +163,7 @@ public class MATCPTunnel : MonoBehaviour
 
             // 2. Calculate Payload Size
             // Metadata per agent: ~88 bytes. Lidar: points * 2 bytes.
-            int agentMetaSize = 88;
+            int agentMetaSize = 72; // Removed lap data, now 72 bytes
             int agentLidarSize = lidarPoints * 2;
             int totalSize = GLOBAL_HEADER_SIZE + (numAgents * (agentMetaSize + agentLidarSize));
 
@@ -262,7 +262,7 @@ public class MATCPTunnel : MonoBehaviour
         // --- 2. PER AGENT LOOP ---
         for (int i = 0; i < dataHub.numberOfAgents; i++)
         {
-            // A. Physics & Inputs
+            // A. Physics & Inputs [6 * 4]
             Pack(dataHub.speedMS[i], ref o);
             Pack(dataHub.throttle[i], ref o);
             Pack(dataHub.steering[i], ref o);
@@ -270,19 +270,23 @@ public class MATCPTunnel : MonoBehaviour
             Pack(dataHub.currentWheelRPM[i], ref o);
             Pack(dataHub.appliedWheelTorque[i], ref o);
 
-            // B. IMU (Euler, LinAccel, AngAccel)
+            // B. IMU (Euler, LinAccel, AngAccel) [9 * 4]
             PackVec3(dataHub.imuAnglesDeg[i], ref o);
             PackVec3(dataHub.linAccelMS[i], ref o);
             PackVec3(dataHub.angAccelDeg[i], ref o);
 
-            // C. Racing Logic
+            // C. Racing Logic [4 * 4]
+            /*
             Pack(dataHub.lapCount[i], ref o);
             Pack(dataHub.currentLapTime[i], ref o);
             Pack(dataHub.lastLapTime[i], ref o);
             Pack(dataHub.bestLapTime[i], ref o);
+            */
+
+            // D. Crash data [1 * 4]
             Pack(dataHub.isCrashed[i] ? 1 : 0, ref o); // Send crash as int (1/0)
 
-            // D. Rewards (Read & Reset Atomically)
+            // E. Rewards (Read & Reset Atomically) [1 * 4]
             float rewardToSend = 0f;
             lock (_lock)
             {
@@ -291,7 +295,7 @@ public class MATCPTunnel : MonoBehaviour
             }
             Pack(rewardToSend, ref o);
 
-            // E. Lidar
+            // F. Lidar [1 * 4 + length * 2]
             float[] scan = dataHub.lidarRanges[i];
             int pointCount = scan.Length;
             Pack(pointCount, ref o); // Header for lidar count

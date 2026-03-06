@@ -133,7 +133,9 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
         if (checkpointId == _nextCheckpointIndices[agentId])
         {
             // LOG: Valid Progress
+#if UNITY_EDITOR
             Debug.Log($"<color=green>[Agent {agentId}] Passed Checkpoint {checkpointId}</color>");
+#endif
 
             // Valid progress updates
             _lastPassedCheckpointIndices[agentId] = checkpointId;
@@ -166,7 +168,10 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
             // Scenario: We just reset/spawned and are inside a trigger we shouldn't be
             if (_ignoreNextWrongCheckpoint[agentId])
             {
+#if UNITY_EDITOR
                 Debug.Log($"<color=grey>[Agent {agentId}] Ignored penalty at Checkpoint {checkpointId} (Just Reset)</color>");
+#endif
+
                 _ignoreNextWrongCheckpoint[agentId] = false;
                 return;
             }
@@ -178,7 +183,9 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
             }
 
             // Scenario: Actual Wrong Way / Skipped
+#if UNITY_EDITOR
             Debug.Log($"<color=orange>[Agent {agentId}] WRONG CHECKPOINT! Hit {checkpointId}, Expected {_nextCheckpointIndices[agentId]}</color>");
+#endif
 
             if (_tcpTunnel) _tcpTunnel.AddReward(agentId, wrongCheckpointPenalty);
         }
