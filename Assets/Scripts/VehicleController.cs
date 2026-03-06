@@ -109,8 +109,6 @@ public class VehicleController : MonoBehaviour, ITimeStepper
     {
         if (DataBridge.Instance == null) return;
 
-        TCPTunnel.Instance.AddReward(idlePenalty);
-
         float vInput, hInput;
 
         // 1. INPUT SELECTION
@@ -176,7 +174,7 @@ public class VehicleController : MonoBehaviour, ITimeStepper
             totalReward += Mathf.Abs(DataBridge.Instance.steering) * erraticSteeringPenalty;
             totalReward += idlePenalty;
 
-            TCPTunnel.Instance.AddReward(totalReward);
+            TCPTunnel.Instance.AddReward(totalReward * TimeStepManager.fixedDeltaTime * 100f);
         }
 
         // 8. FLIP CHECK

@@ -53,7 +53,7 @@ public class TCPTunnel : MonoBehaviour
 
     // Thread-safe Reward
     private int _rewardScaled = 0;
-    private const float REWARD_SCALE = 10000f;
+    private const float REWARD_SCALE = 1_000_000f;
 
     // --- THREAD SAFETY QUEUE ---
     private readonly object _lock = new object();
