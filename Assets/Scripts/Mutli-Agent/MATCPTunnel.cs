@@ -82,7 +82,7 @@ public class MATCPTunnel : MonoBehaviour
 
         if (renderFrameIntervalInput != null)
         {
-            renderFrameIntervalInput.text = OnDemandRendering.renderFrameInterval.ToString("F4");
+            renderFrameIntervalInput.text = OnDemandRendering.renderFrameInterval.ToString();
 
             // Add the listener via code (safer than manual Inspector linking)
             renderFrameIntervalInput.onEndEdit.AddListener(OnEndStringEdit);

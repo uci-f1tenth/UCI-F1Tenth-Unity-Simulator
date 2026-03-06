@@ -12,6 +12,7 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
 
     [Tooltip("Which agent's data to visualize.")]
     public int selectedAgentIndex = 0;
+    public TMP_InputField selectedAgentIndexInput;
 
     [Header("--- Global Stats ---")]
     public TextMeshProUGUI timeVal;
@@ -62,6 +63,20 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
         _dataHub = MADataHub.Instance;
         _agentManager = MAAgentManager.Instance;
         _timeManager = MATimeStepManager.Instance;
+
+        if (selectedAgentIndexInput != null)
+        {
+            selectedAgentIndexInput.text = selectedAgentIndex.ToString();
+
+            // Add the listener via code (safer than manual Inspector linking)
+            selectedAgentIndexInput.onEndEdit.AddListener(OnEndStringEdit);
+        }
+    }
+
+    public void OnEndStringEdit(string str)
+    {
+        selectedAgentIndex = Mathf.Clamp(int.Parse(str), 0, _dataHub.numberOfAgents - 1);
+        Debug.Log($"Updated selectedAgentIndex to {selectedAgentIndex}!");
     }
 
     // Standard Update: Used ONLY for Frame Rate calculation (visuals)
@@ -105,8 +120,7 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
         if (_dataHub == null || _timeManager == null) return;
         if (_dataHub.numberOfAgents == 0) return;
 
-        // 2. Safety: Clamp Index
-        selectedAgentIndex = Mathf.Clamp(selectedAgentIndex, 0, _dataHub.numberOfAgents - 1);
+        // 2. Index
         int idx = selectedAgentIndex;
 
         // ---------------------------------------------------------
