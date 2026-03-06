@@ -263,6 +263,8 @@ public class TCPTunnel : MonoBehaviour
         // Motion
         Pack(db.timeSinceStart, ref o);
         Pack(TimeStepManager.fixedDeltaTime, ref o);
+
+        // Agent data
         Pack(db.speedMS, ref o);
         Pack(db.steering, ref o);
         Pack(db.steeringAngleDeg, ref o);

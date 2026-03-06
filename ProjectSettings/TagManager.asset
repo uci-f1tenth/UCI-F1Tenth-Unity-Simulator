@@ -4,18 +4,17 @@
 TagManager:
   serializedVersion: 3
   tags:
-  - Checkpoint
-  - Finish Line A
-  - Finish Line B
-  - Wall
+  - Agent Tag
+  - Checkpoint Tag
+  - Crash Barrier Tag
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Raycast Wall
+  - Raycast Wall Layer
   - Water
   - UI
-  - 
+  - Agent Layer
   - 
   - 
   - 

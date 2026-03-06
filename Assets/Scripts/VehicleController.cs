@@ -20,7 +20,7 @@ public class VehicleController : MonoBehaviour, ITimeStepper
     public CheckpointManager checkpointManager;
 
     [Header("Collision & RL Settings")]
-    public string wallTag = "Wall";
+    public string wallTag = "Crash Barrier Tag";
     public float resetCooldown = 0.5f;
     public float crashPenalty = -50.0f; // Increased penalty for RL training
     private float lastResetTime;

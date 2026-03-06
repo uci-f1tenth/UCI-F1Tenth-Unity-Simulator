@@ -14,7 +14,7 @@ public class CheckpointTrigger : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         // Detects the player by tag. Adjust "Player" to match your vehicle's tag.
-        if (other.CompareTag("Player") || (other.attachedRigidbody != null && other.attachedRigidbody.CompareTag("Player")))
+        if (other.CompareTag("Agent Tag"))
         {
             manager.OnCheckpointEntered(index);
         }
