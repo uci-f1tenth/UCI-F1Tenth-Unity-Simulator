@@ -5,6 +5,9 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
 {
     public static MACheckpointManager Instance { get; private set; }
 
+    // Static References
+    private MATimeStepManager timeStepManager;
+
     [Header("--- Track Configuration ---")]
     [Tooltip("Drag Checkpoint GameObjects here in order. Index 0 is Start/Finish.")]
     public List<GameObject> checkpointObjects = new List<GameObject>();
@@ -40,6 +43,8 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
     {
         if (Instance != null && Instance != this) { Destroy(this); return; }
         Instance = this;
+
+        timeStepManager = MATimeStepManager.Instance;
     }
 
     private void Start()
@@ -60,7 +65,7 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
         _lapStartTimes = new float[count];
         _ignoreNextWrongCheckpoint = new bool[count];
 
-        float startTime = MATimeStepManager.Instance.fixedTime;
+        float startTime = timeStepManager.fixedTime;
 
         for (int i = 0; i < count; i++)
         {
@@ -104,7 +109,7 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
     {
         if (_dataHub == null) return;
 
-        float now = MATimeStepManager.Instance.fixedTime;
+        float now = timeStepManager.fixedTime;
 
         // Update current lap time for all agents
         for (int i = 0; i < _dataHub.numberOfAgents; i++)
@@ -181,7 +186,7 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
 
     private void CompleteLap(int agentId)
     {
-        float now = MATimeStepManager.Instance.fixedTime;
+        float now = timeStepManager.fixedTime;
         float lapTime = now - _lapStartTimes[agentId];
 
         _dataHub.lapCount[agentId]++;
@@ -232,7 +237,7 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
         {
             _lastPassedCheckpointIndices[agentIndex] = 0;
             _nextCheckpointIndices[agentIndex] = 1;
-            _lapStartTimes[agentIndex] = MATimeStepManager.Instance.fixedTime; // Reset lap timer on crash? Optional.
+            _lapStartTimes[agentIndex] = timeStepManager.fixedTime; // Reset lap timer on crash? Optional.
         }
 
         // Prevent immediate "Wrong Checkpoint" penalty if they spawn inside a trigger

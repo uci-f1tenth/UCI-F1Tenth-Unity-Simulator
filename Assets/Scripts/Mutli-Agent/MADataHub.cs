@@ -1,8 +1,11 @@
 using UnityEngine;
 
-public class MADataHub : MonoBehaviour
+public class MADataHub : MonoBehaviour, ITimeStepper
 {
     public static MADataHub Instance { get; private set; }
+
+    // Static References
+    private MATimeStepManager timeStepManager;
 
     [Header("Simulation Configuration")]
     [Tooltip("Number of agents to allocate buffers for")]
@@ -54,6 +57,8 @@ public class MADataHub : MonoBehaviour
         }
         Instance = this;
 
+        timeStepManager = MATimeStepManager.Instance;
+
         InitializeBuffers();
     }
 
@@ -104,6 +109,6 @@ public class MADataHub : MonoBehaviour
 
     public void TimeStep()
     {
-        ups = 1.0f / TimeStepManager.fixedDeltaTime;
+        ups = 1.0f / timeStepManager.fixedDeltaTime;
     }
 }
