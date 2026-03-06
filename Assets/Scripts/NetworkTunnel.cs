@@ -1,10 +1,12 @@
-﻿using UnityEngine;
-using TMPro;
-using System;
+﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.IO;
+using TMPro;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.SocialPlatforms;
 
 public class TCPTunnel : MonoBehaviour
 {
@@ -19,6 +21,15 @@ public class TCPTunnel : MonoBehaviour
     // We ignore SendPort/IP because we reply to whoever connects to us.
     public TMP_InputField portInput;
     public TextMeshProUGUI buttonLabel;
+
+    [Header("Performance Settings")]
+    [Tooltip("How many frames to skip rendering in BUILD mode (30 = 1 render per 30 logic updates)")]
+    public int buildRenderInterval = 30;
+
+    [Tooltip("How many frames to skip in EDITOR mode (Keep low to prevent UI lag)")]
+    public int editorRenderInterval = 1;
+
+    public int currentRenderInterval = 1;
 
     // Networking
     private TcpListener server;
@@ -42,7 +53,7 @@ public class TCPTunnel : MonoBehaviour
 
     // Thread-safe Reward
     private int _rewardScaled = 0;
-    private const float REWARD_SCALE = 1000f;
+    private const float REWARD_SCALE = 10000f;
 
     // --- THREAD SAFETY QUEUE ---
     private readonly object _lock = new object();
@@ -50,10 +61,30 @@ public class TCPTunnel : MonoBehaviour
     private float _pendingThrottle = 0f;
     private bool _hasNewCommand = false;
 
+    public void OnEndStringEdit(string str)
+    {
+        currentRenderInterval = int.Parse(str);
+        Debug.Log($"Updated currentRenderInterval to {currentRenderInterval}!");
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this) Destroy(this);
         else Instance = this;
+
+        // Disable VSync and allow for "unlimited fps"
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = -1;
+
+        // Check for editor so that the editor window doesn't slow down horribly
+        if (Application.isEditor)
+        {
+            currentRenderInterval = editorRenderInterval;
+        }
+        else
+        {
+            currentRenderInterval = buildRenderInterval;
+        }
     }
 
     private void Update()
@@ -61,6 +92,18 @@ public class TCPTunnel : MonoBehaviour
         // 1. Check for commands from the background thread
         float steer = 0, throttle = 0;
         bool processCommand = false;
+
+        // 2. Tell the Rendering Engine to sleep
+        // The Update() loop (and your network check) still runs every single time!
+        if (timeStepManager != null && timeStepManager.mode == TimeStepManager.ControlMode.Manual)
+        {
+            OnDemandRendering.renderFrameInterval = currentRenderInterval;
+        }
+        else if (OnDemandRendering.renderFrameInterval > 1)
+        {
+            OnDemandRendering.renderFrameInterval = 1;
+            Debug.Log("OnDemandRendering.renderFrameInterval = 1");
+        }
 
         lock (_lock)
         {
@@ -112,7 +155,9 @@ public class TCPTunnel : MonoBehaviour
     private float GetAndResetReward()
     {
         int val = Interlocked.Exchange(ref _rewardScaled, 0);
-        return (float)val / REWARD_SCALE;
+        float scaledReward = (float)val / REWARD_SCALE;
+        //Debug.Log($"Send reward: {scaledReward}");
+        return scaledReward;
     }
 
     public void ToggleConnection()
@@ -220,15 +265,22 @@ public class TCPTunnel : MonoBehaviour
         Pack(TimeStepManager.fixedDeltaTime, ref o);
         Pack(db.speedMS, ref o);
         Pack(db.steering, ref o);
-        Pack(db.steeringAngleRad, ref o);
+        Pack(db.steeringAngleDeg, ref o);
         Pack(db.throttle, ref o);
         Pack(db.wheelTicks, ref o);
         Pack(db.currentWheelRPM, ref o);
 
         // IMU
-        Vector3 rEuler = new Vector3(db.imuAngles.z, -db.imuAngles.x, db.imuAngles.y);
+        /* // Convert to more common IMU axes
+        Vector3 rEuler = new Vector3(db.imuAnglesDeg.z, -db.imuAnglesDeg.x, db.imuAnglesDeg.y);
         Vector3 rLin = new Vector3(db.linAccel.z, -db.linAccel.x, db.linAccel.y);
-        Vector3 rAng = new Vector3(db.angAccel.z, -db.angAccel.x, db.angAccel.y);
+        Vector3 rAng = new Vector3(db.angAccelDeg.z, -db.angAccelDeg.x, db.angAccelDeg.y);
+        */
+
+        // Use Unity's Left Handed Coordinates
+        Vector3 rEuler = db.imuAnglesDeg;
+        Vector3 rLin = db.linAccel;
+        Vector3 rAng = db.angAccelDeg;
 
         Pack(rEuler.x, ref o); Pack(rEuler.y, ref o); Pack(rEuler.z, ref o);
         Pack(rLin.x, ref o); Pack(rLin.y, ref o); Pack(rLin.z, ref o);

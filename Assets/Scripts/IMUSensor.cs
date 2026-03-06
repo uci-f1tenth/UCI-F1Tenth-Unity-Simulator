@@ -53,7 +53,8 @@ public class IMUSensor : MonoBehaviour, ITimeStepper
     private void UpdateSensorData(float dt)
     {
         // 1. LOCAL ANGLES (Based on Rigidbody)
-        Vector3 localAnglesRad = targetRigidbody.transform.localEulerAngles * Mathf.Deg2Rad;
+        //Vector3 localAnglesRad = targetRigidbody.transform.localEulerAngles * Mathf.Deg2Rad;
+        Vector3 localAnglesDeg = targetRigidbody.transform.localEulerAngles; // Use degrees for now since it's more intuitive
 
         // 2. LOCAL LINEAR ACCELERATION
         Vector3 localVelocity = transform.InverseTransformDirection(targetRigidbody.linearVelocity);
@@ -70,14 +71,14 @@ public class IMUSensor : MonoBehaviour, ITimeStepper
         Vector3 localAngularAccel = (localAngularVel - lastLocalAngularVelocity) / dt;
 
         // 4. APPLY CORRUPTION
-        Vector3 finalAngles = ApplySensorEffects(localAnglesRad, 0.02f, dt);
+        Vector3 finalAngles = ApplySensorEffects(localAnglesDeg, 0.02f, dt);
         Vector3 finalLin = ApplySensorEffects(localLinearAccel, 1.5f, dt);
         Vector3 finalAng = ApplySensorEffects(localAngularAccel, 0.5f, dt);
 
         // 5. UPDATE DATABRIDGE
-        DataBridge.Instance.imuAngles = finalAngles;
+        DataBridge.Instance.imuAnglesDeg = finalAngles;
         DataBridge.Instance.linAccel = finalLin;
-        DataBridge.Instance.angAccel = finalAng;
+        DataBridge.Instance.angAccelDeg = finalAng;
 
         lastLocalVelocity = localVelocity;
         lastLocalAngularVelocity = localAngularVel;

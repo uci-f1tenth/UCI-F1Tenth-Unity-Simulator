@@ -129,6 +129,10 @@ public class CheckpointManager : MonoBehaviour, ITimeStepper
         targetRb.linearVelocity = Vector3.zero;
         targetRb.angularVelocity = Vector3.zero;
 
+        // Trying to curb the cheese the agent is trying to do by teleporting to start instead of last point
+        lastPassedCheckpointTransform = checkpointObjects[0].transform;
+        nextCheckpointIndex = 1;
+
         targetRb.position = lastPassedCheckpointTransform.position + (Vector3.up * respawnHeightOffset);
         targetRb.rotation = lastPassedCheckpointTransform.rotation;
 

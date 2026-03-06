@@ -6,7 +6,12 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Profiling;
 
-// Implementing your interface
+public enum LidarScanDirection
+{
+    CounterClockwise, // Standard Math (Right -> Front -> Left)
+    Clockwise         // (Left -> Front -> Right)
+}
+
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class LidarSensor2D : MonoBehaviour, ITimeStepper
 {
@@ -17,7 +22,7 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
     public float maxAngleRad = Mathf.PI;
     public float minRange = 0.1f;
     public float maxRange = 20f;
-    public float updateRateHz = 40f;
+    public LidarScanDirection scanDirection = LidarScanDirection.CounterClockwise;
 
     [Header("Visualization")]
     public bool showVisualization = true;
@@ -43,11 +48,9 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
     private int[] meshIndices;
 
     private Mesh lineMesh;
-    private float scanTimer;
     private QueryParameters qParams;
     private bool meshNeedsClearing;
 
-    // Fix: Ensure we flag the mesh to be cleared when visualization is turned off
     public void ToggleAllVisuals(bool value)
     {
         showVisualization = value;
@@ -90,13 +93,32 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
         rangesManaged = new float[numberOfPoints];
     }
 
+    // --- UPDATED: Handles Scan Direction ---
     private void PrecomputeDirections()
     {
-        float totalAngleRange = maxAngleRad - minAngleRad;
+        float startAngle = minAngleRad;
+        float endAngle = maxAngleRad;
+
+        // If Clockwise, we simply swap the start and end logic for the loop
+        if (scanDirection == LidarScanDirection.CounterClockwise)
+        {
+            startAngle = maxAngleRad;
+            endAngle = minAngleRad;
+        }
+
+        float totalAngleRange = endAngle - startAngle;
         float angleStep = totalAngleRange / (numberOfPoints - 1);
+
         for (int i = 0; i < numberOfPoints; i++)
         {
-            float currentAngle = minAngleRad + (i * angleStep);
+            float currentAngle = startAngle + (i * angleStep);
+
+            // Standard Math: 0 is East (Right), PI/2 is North (Forward)
+            // Assuming the car Forward is +Z, Right is +X in Unity world space.
+            // But usually for 2D Lidars in Unity:
+            // Sin/Cos on (X,Z) plane:
+            // Cos(0) = 1 (X=1), Sin(0) = 0 (Z=0) -> World Right
+            // Cos(90) = 0 (X=0), Sin(90) = 1 (Z=1) -> World Forward
             localDirections[i] = new float3(Mathf.Cos(currentAngle), 0, Mathf.Sin(currentAngle));
         }
     }
@@ -157,7 +179,6 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
             float dist;
             if (!hitSomething)
             {
-                // KEEPING YOUR PREFERENCE: Misses draw at max range
                 dist = maxRange;
             }
             else
@@ -184,7 +205,6 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
         }
     }
 
-    // Moved all logic into TimeStep() as requested
     public void TimeStep()
     {
         Profiler.BeginSample("Lidar.TotalScanTime");
@@ -195,6 +215,7 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
 
         for (int i = 0; i < numberOfPoints; i++)
         {
+            // Apply rotation to the precomputed local direction
             Vector3 worldDir = rotation * (Vector3)localDirections[i];
             commands[i] = new RaycastCommand(origin, worldDir, qParams, maxRange);
         }
@@ -215,7 +236,7 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
             maxRange = maxRange,
             noiseSigma = noiseSigma,
             dropoutProb = dropoutProbability,
-            seed = (uint)(Time.frameCount), // Using frameCount for seed variety
+            seed = (uint)(Time.frameCount),
             colorNear = new float4(nearColor.r, nearColor.g, nearColor.b, nearColor.a),
             colorFar = new float4(farColor.r, farColor.g, farColor.b, farColor.a)
         };
@@ -223,18 +244,22 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
         JobHandle processHandle = processJob.Schedule(numberOfPoints, 64, raycastHandle);
         processHandle.Complete();
 
-        // 4. Data Bridge
+        // 4. Data Bridge (FIXED)
         NativeArray<float>.Copy(rangesNative, rangesManaged, numberOfPoints);
-        // if (DataBridge.Instance != null) DataBridge.Instance.lidarRanges = rangesManaged;
 
-        // 5. Visualization logic (now correctly handles the toggle)
+        if (DataBridge.Instance != null)
+        {
+            DataBridge.Instance.lidarRanges = rangesManaged;
+        }
+
+        // 5. Visualization logic
         if (showVisualization)
         {
             lineMesh.SetVertices(meshVerticesNative);
             lineMesh.SetColors(meshColorsNative);
             lineMesh.SetIndices(meshIndices, MeshTopology.Lines, 0);
             lineMesh.RecalculateBounds();
-            meshNeedsClearing = true; // Ensure it clears if we turn visualization off later
+            meshNeedsClearing = true;
         }
         else if (meshNeedsClearing)
         {
@@ -243,5 +268,14 @@ public class LidarSensor2D : MonoBehaviour, ITimeStepper
         }
 
         Profiler.EndSample();
+    }
+
+    // Allow validation in editor to recompute if settings change
+    private void OnValidate()
+    {
+        if (Application.isPlaying && localDirections.IsCreated)
+        {
+            PrecomputeDirections();
+        }
     }
 }

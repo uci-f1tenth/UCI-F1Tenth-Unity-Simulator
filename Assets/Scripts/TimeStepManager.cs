@@ -99,7 +99,7 @@ public class TimeStepManager : MonoBehaviour
     // Unity's Internal Loop (Runs only if mode == Automatic)
     void FixedUpdate()
     {
-        fixedStepSize = float.Parse(timestepInput.text);
+        fixedStepSize = float.Parse(timestepInput.text); // Should be updated to use InputField's OnValueChange
         if (fixedStepSize < 0f)
             fixedStepSize = 0.000005f;
 
@@ -144,10 +144,11 @@ public class TimeStepManager : MonoBehaviour
         PerformLogicStep(dt);
 
         // 2. Run Physics (The "Script" mode requires explicit simulation)
+        // This has to be run in an engine/main thread!
         Physics.Simulate(dt);
 
         // 3. Sync Transforms ensures raycasts hit the object's new position immediately
-        Physics.SyncTransforms();
+        //Physics.SyncTransforms();
 
         // Send telemetry after everything settles
         TCPTunnel.Instance.SendTelemetry();

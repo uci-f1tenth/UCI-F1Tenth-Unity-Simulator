@@ -25,10 +25,13 @@ public class VehicleController : MonoBehaviour, ITimeStepper
     public float crashPenalty = -50.0f; // Increased penalty for RL training
     private float lastResetTime;
 
-    [Tooltip("Idle penalty.")]
+    [Tooltip("Rewards")]
+    public float velocityReward = 0.1f;
+    public float survivalReward = 0.02f;
+
+    [Tooltip("Penalty")]
     public float idlePenalty = -0.1f;
-    [Tooltip("Move forward motivation.")]
-    public float forwardMotivation = 0.1f;
+    public float erraticSteeringPenalty = -0.005f;
 
     private WheelControl[] wheels;
     private Rigidbody rigidBody;
@@ -159,12 +162,21 @@ public class VehicleController : MonoBehaviour, ITimeStepper
         // 6. SYNC TELEMETRY (SIM-TO-REAL)
         DataBridge.Instance.currentWheelRPM = avgRPM;
         DataBridge.Instance.appliedWheelTorque = motorOut;
-        DataBridge.Instance.steeringAngleRad = currentSteerAngle * Mathf.Deg2Rad;
+        //DataBridge.Instance.steeringAngleRad = currentSteerAngle * Mathf.Deg2Rad;
+        DataBridge.Instance.steeringAngleDeg = currentSteerAngle; // Degrees for now since it's more intuitive
         DataBridge.Instance.speedMS = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
 
-        if (DataBridge.Instance.throttle > 0.01)
+        // Should only update when connected
+        if (TCPTunnel.Instance.isConnected)
         {
-            TCPTunnel.Instance.AddReward(forwardMotivation);
+            float totalReward = 0f;
+            totalReward += DataBridge.Instance.speedMS * velocityReward;
+            totalReward += survivalReward;
+
+            totalReward += Mathf.Abs(DataBridge.Instance.steering) * erraticSteeringPenalty;
+            totalReward += idlePenalty;
+
+            TCPTunnel.Instance.AddReward(totalReward);
         }
 
         // 8. FLIP CHECK

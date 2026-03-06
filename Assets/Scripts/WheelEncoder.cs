@@ -22,6 +22,10 @@ public class WheelTicksSim : MonoBehaviour, ITimeStepper
 
         // We always accumulate the ticks internally to keep the math perfect
         _internalAccumulatedTicks += ticksPerSecond * TimeStepManager.fixedDeltaTime;
+        if (_internalAccumulatedTicks > 1000000000) // Stop overflow from long training runs
+        {
+            _internalAccumulatedTicks = 0;
+        }
 
         // 2. Control the output rate to the DataBridge
         float interval = 1f / updateRateHz;

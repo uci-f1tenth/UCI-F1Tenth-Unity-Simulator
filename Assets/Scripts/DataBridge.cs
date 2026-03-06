@@ -14,12 +14,12 @@ public class DataBridge : MonoBehaviour, ITimeStepper
     public float throttle;
     public float steering; // Input [-1, 1]
     public int wheelTicks;
-    public Vector3 imuAngles, angAccel, linAccel;
+    public Vector3 imuAnglesDeg, angAccelDeg, linAccel;
 
     [Header("Wheel Telemetry")]
     public float currentWheelRPM;    // Average RPM of drive wheels
     public float appliedWheelTorque; // Current torque output (N-m)
-    public float steeringAngleRad;   // Current steering angle in Radians
+    public float steeringAngleDeg;   // Current steering angle in Radians
 
     [Header("Racing")]
     public int lapCount;

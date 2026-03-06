@@ -53,7 +53,7 @@ public class InfoPanelUpdater : MonoBehaviour, ITimeStepper
         // Displaying RPM as whole number, Torque with 1 decimal, Yaw with 3 decimals
         UpdateIfChanged(ref lastRpm, db.currentWheelRPM, rpmVal, "F0");
         UpdateIfChanged(ref lastTorque, db.appliedWheelTorque, torqueVal, "F3");
-        UpdateIfChanged(ref lastYaw, db.steeringAngleRad, yawVal, "F3");
+        UpdateIfChanged(ref lastYaw, db.steeringAngleDeg, yawVal, "F3");
 
         if (db.wheelTicks != lastWheelTicks)
         {
@@ -61,8 +61,8 @@ public class InfoPanelUpdater : MonoBehaviour, ITimeStepper
             UpdateText(encoderVal, $"{lastWheelTicks}");
         }
 
-        UpdateVectorIfChanged(ref lastImu, db.imuAngles, imuVal, false);
-        UpdateVectorIfChanged(ref lastAngAccel, db.angAccel, angAccelVal, true);
+        UpdateVectorIfChanged(ref lastImu, db.imuAnglesDeg, imuVal, false);
+        UpdateVectorIfChanged(ref lastAngAccel, db.angAccelDeg, angAccelVal, true);
         UpdateVectorIfChanged(ref lastLinAccel, db.linAccel, linAccelVal, true);
 
         // 3. Racing
