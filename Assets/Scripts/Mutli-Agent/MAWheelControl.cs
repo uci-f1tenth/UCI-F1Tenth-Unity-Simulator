@@ -33,6 +33,7 @@ public class MAWheelControl : MonoBehaviour
         // The expensive physics query
         WheelCollider.GetWorldPose(out pos, out rot);
 
+        // TODO: Reset to default "straight" position when its not longer being synced
         _modelTransform.position = pos;
         _modelTransform.rotation = rot;
     }

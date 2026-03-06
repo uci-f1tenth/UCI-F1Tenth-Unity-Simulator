@@ -9683,7 +9683,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 19
+  m_VersionIndex: 25
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -19371,7 +19371,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 19
+  m_VersionIndex: 25
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -29059,7 +29059,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 19
+  m_VersionIndex: 25
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -29148,7 +29148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0914a86b10537049bbf20a486f6a12b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  wheelModel: {fileID: 0}
+  wheelModel: {fileID: 7638231117122448103}
   steerable: 0
   motorized: 1
   WheelCollider: {fileID: 0}
@@ -38835,7 +38835,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 19
+  m_VersionIndex: 25
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -38970,7 +38970,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0914a86b10537049bbf20a486f6a12b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  wheelModel: {fileID: 0}
+  wheelModel: {fileID: 6212127789825556029}
   steerable: 1
   motorized: 1
   WheelCollider: {fileID: 0}
@@ -50293,7 +50293,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 19
+  m_VersionIndex: 25
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -50569,7 +50569,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0914a86b10537049bbf20a486f6a12b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  wheelModel: {fileID: 0}
+  wheelModel: {fileID: 4124984584053871298}
   steerable: 1
   motorized: 1
   WheelCollider: {fileID: 0}
@@ -50657,7 +50657,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0914a86b10537049bbf20a486f6a12b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  wheelModel: {fileID: 0}
+  wheelModel: {fileID: 3877447089671915434}
   steerable: 0
   motorized: 1
   WheelCollider: {fileID: 0}
@@ -50755,7 +50755,7 @@ MonoBehaviour:
   erraticSteeringPenalty: -0.005
   crashPenalty: -50
   resetCooldown: 0.01
-  visualizeWheels: 0
+  rb: {fileID: 0}
 --- !u!1 &9070156215448336040
 GameObject:
   m_ObjectHideFlags: 0

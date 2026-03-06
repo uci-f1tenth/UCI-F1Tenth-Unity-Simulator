@@ -28,13 +28,9 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
     public float resetCooldown = 0.1f; // Slightly increased to prevent physics jitter
     private float lastResetTime;
 
-    [Header("--- Performance Optimization ---")]
-    [Tooltip("If true, wheel meshes will sync to physics. Disable for faster training.")]
-    public bool visualizeWheels = true;
-
     // Internal Physics
+    public Rigidbody rb;
     private MAWheelControl[] wheels;
-    private Rigidbody rigidBody;
     private float currentSteerAngle = 0f;
 
     // Cache References for Performance
@@ -44,7 +40,7 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
 
     void Start()
     {
-        rigidBody = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
         wheels = GetComponentsInChildren<MAWheelControl>();
 
         // Cache singletons to avoid repeated "Instance" lookups in the hot loop
@@ -62,7 +58,7 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
         // Teleport to start position on load
         if (MACheckpointManager.Instance != null && agentIndex != -1)
         {
-            MACheckpointManager.Instance.TeleportAgent(agentIndex, rigidBody);
+            MACheckpointManager.Instance.TeleportAgent(agentIndex, rb);
         }
     }
 
@@ -120,7 +116,7 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
         dataHub.steeringAngleDeg[agentIndex] = currentSteerAngle;
 
         // Calculate Forward Speed
-        float speed = Vector3.Dot(transform.forward, rigidBody.linearVelocity);
+        float speed = Vector3.Dot(transform.forward, rb.linearVelocity);
         dataHub.speedMS[agentIndex] = speed;
 
         // 7. CALCULATE REWARDS
@@ -152,14 +148,10 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
     }
 
     // =================================================================
-    //                  VISUAL UPDATE LOOP (Standard Unity Update)
+    //                             VISUALS
     // =================================================================
-    private void Update()
+    public void SyncWheels()
     {
-        // OPTIMIZATION:
-        // 1. If visualizedWheels is unchecked, skip everything.
-        if (!visualizeWheels) return;
-
         // Batch update all 4 wheels in this single function call
         for (int i = 0; i < wheels.Length; i++)
         {
@@ -197,7 +189,7 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
             if (MACheckpointManager.Instance != null)
             {
                 // The Manager handles position, rotation, and zeroing velocity
-                MACheckpointManager.Instance.TeleportAgent(agentIndex, rigidBody);
+                MACheckpointManager.Instance.TeleportAgent(agentIndex, rb);
             }
             else
             {

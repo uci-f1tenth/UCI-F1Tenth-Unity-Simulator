@@ -1,6 +1,8 @@
-using UnityEngine;
-using TMPro;
 using System;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.Rendering;
 
 public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
 {
@@ -52,11 +54,13 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
 
     // --- References ---
     private MADataHub _dataHub;
+    private MAAgentManager _agentManager;
     private MATimeStepManager _timeManager;
 
     void Start()
     {
         _dataHub = MADataHub.Instance;
+        _agentManager = MAAgentManager.Instance;
         _timeManager = MATimeStepManager.Instance;
     }
 
@@ -76,6 +80,13 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
 
             // Update FPS text here directly as it doesn't depend on Physics Step
             if (fpsVal != null) fpsVal.text = _currentFPS.ToString("F0");
+        }
+
+        // Draw Visuals (Singleton Call)
+        var currentAgent = _agentManager.activeAgents[selectedAgentIndex];
+        if (MAAgentVisualizer.Instance != null && currentAgent != null)
+        {
+            MAAgentVisualizer.Instance.DrawVisuals(currentAgent);
         }
     }
 

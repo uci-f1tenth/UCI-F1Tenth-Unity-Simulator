@@ -19,6 +19,7 @@ public class MATCPTunnel : MonoBehaviour
     [Header("--- UI References ---")]
     public TMP_InputField ipInput;
     public TMP_InputField portInput;
+    public TMP_InputField renderFrameIntervalInput;
     public TextMeshProUGUI buttonLabel;
 
     [Header("--- Sensor Settings ---")]
@@ -78,6 +79,14 @@ public class MATCPTunnel : MonoBehaviour
         if (dataHub == null) dataHub = MADataHub.Instance;
         if (timeStepManager == null) timeStepManager = MATimeStepManager.Instance;
         if (sceneResetObject == null) sceneResetObject = MASceneReset.Instance;
+
+        if (renderFrameIntervalInput != null)
+        {
+            renderFrameIntervalInput.text = OnDemandRendering.renderFrameInterval.ToString("F4");
+
+            // Add the listener via code (safer than manual Inspector linking)
+            renderFrameIntervalInput.onEndEdit.AddListener(OnEndStringEdit);
+        }
     }
 
     public void OnEndStringEdit(string str)
