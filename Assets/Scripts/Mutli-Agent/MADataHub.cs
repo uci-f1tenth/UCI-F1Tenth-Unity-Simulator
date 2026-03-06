@@ -7,6 +7,8 @@ public class MADataHub : MonoBehaviour
     [Header("Simulation Configuration")]
     [Tooltip("Number of agents to allocate buffers for")]
     public int numberOfAgents = 2;
+
+    // Common variables that will be gathered from the agent prefab
     public int lidarResolution = 270;
 
     [Header("Global Performance")]
@@ -84,8 +86,8 @@ public class MADataHub : MonoBehaviour
 
         // Sensors & Status
         isCrashed = new bool[numberOfAgents];
-        lidarRanges = new float[numberOfAgents][];
 
+        lidarRanges = new float[numberOfAgents][];
         for (int i = 0; i < numberOfAgents; i++)
         {
             lidarRanges[i] = new float[lidarResolution];

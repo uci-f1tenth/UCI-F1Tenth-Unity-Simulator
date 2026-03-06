@@ -659,106 +659,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 139197991}
   m_CullTransparentMesh: 1
---- !u!1 &172425079
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 172425081}
-  - component: {fileID: 172425083}
-  - component: {fileID: 172425080}
-  - component: {fileID: 172425082}
-  m_Layer: 0
-  m_Name: Networking Bridge
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
---- !u!114 &172425080
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 172425079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8b53d2663abd8947a32b7d925c3e563, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  sceneResetObject: {fileID: 1838572742}
-  timeStepManager: {fileID: 172425083}
-  portInput: {fileID: 553708094}
-  buttonLabel: {fileID: 2053822166}
-  buildRenderInterval: 256
-  editorRenderInterval: 4
-  currentRenderInterval: 0
-  isConnected: 0
---- !u!4 &172425081
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 172425079}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &172425082
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 172425079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13f69025f40098846aa048ea65368776, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  fps: 0
-  ups: 0
-  timeSinceStart: 0
-  speedMS: 0
-  throttle: 0
-  steering: 0
-  wheelTicks: 0
-  imuAnglesDeg: {x: 0, y: 0, z: 0}
-  angAccelDeg: {x: 0, y: 0, z: 0}
-  linAccel: {x: 0, y: 0, z: 0}
-  currentWheelRPM: 0
-  appliedWheelTorque: 0
-  steeringAngleDeg: 0
-  lapCount: 0
-  currentLapTime: 0
-  lastLapTime: 0
-  bestLapTime: 0
-  lidarRanges: []
-  isCrashed: 0
---- !u!114 &172425083
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 172425079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66d02bf5686a4a249871191930a9eec1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  mode: 0
-  fixedStepSize: 0
-  timestepInput: {fileID: 721434499}
 --- !u!1 &228581934
 GameObject:
   m_ObjectHideFlags: 0
@@ -52327,10 +52227,10 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
@@ -59075,7 +58975,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 172425080}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: UDPTunnel, Assembly-CSharp
         m_MethodName: ToggleConnection
         m_Mode: 1
@@ -61239,7 +61139,7 @@ MonoBehaviour:
   m_OnEndEdit:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 172425080}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: TCPTunnel, Assembly-CSharp
         m_MethodName: OnEndStringEdit
         m_Mode: 0
@@ -63242,6 +63142,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1838572739}
   - component: {fileID: 1838572742}
+  - component: {fileID: 1838572745}
+  - component: {fileID: 1838572744}
+  - component: {fileID: 1838572743}
   m_Layer: 0
   m_Name: Environment
   m_TagString: Untagged
@@ -63278,6 +63181,73 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3332b1a1f9c35f34c95ec2fc3c9e69d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+--- !u!114 &1838572743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1838572738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af2c76e5bf7e60b418e4df8579942476, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  numberOfAgents: 2
+  lidarResolution: 270
+  fps: 0
+  ups: 0
+  timeSinceStart: 0
+  speedMS: []
+  throttle: []
+  steering: []
+  wheelTicks: 
+  imuAnglesDeg: []
+  angAccelDeg: []
+  linAccelMS: []
+  currentWheelRPM: []
+  appliedWheelTorque: []
+  steeringAngleDeg: []
+  lapCount: 
+  currentLapTime: []
+  lastLapTime: []
+  bestLapTime: []
+  isCrashed: 
+--- !u!114 &1838572744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1838572738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8b53d2663abd8947a32b7d925c3e563, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  sceneResetObject: {fileID: 1838572742}
+  timeStepManager: {fileID: 0}
+  portInput: {fileID: 553708094}
+  buttonLabel: {fileID: 2053822166}
+  buildRenderInterval: 256
+  editorRenderInterval: 4
+  currentRenderInterval: 0
+  isConnected: 0
+--- !u!114 &1838572745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1838572738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66d02bf5686a4a249871191930a9eec1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  mode: 0
+  fixedStepSize: 0
+  timestepInput: {fileID: 721434499}
 --- !u!1 &1884881157
 GameObject:
   m_ObjectHideFlags: 0
@@ -63429,7 +63399,7 @@ MonoBehaviour:
   onValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 172425083}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: TimeStepManager, Assembly-CSharp
         m_MethodName: OnToggleChanged
         m_Mode: 0
@@ -67238,4 +67208,3 @@ SceneRoots:
   - {fileID: 1973035651}
   - {fileID: 1838572739}
   - {fileID: 543450653274600942}
-  - {fileID: 172425081}
