@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Burst.CompilerServices;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Windows;
 
 public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
 {
@@ -13,6 +15,10 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
     [Tooltip("Which agent's data to visualize.")]
     public int selectedAgentIndex = 0;
     public TMP_InputField selectedAgentIndexInput;
+
+    [Header("Agent Control Mode")]
+    public bool useManualControl = true;
+    public TextMeshProUGUI buttonLabel;
 
     [Header("--- Global Stats ---")]
     public TextMeshProUGUI timeVal;
@@ -57,12 +63,15 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
     private MADataHub _dataHub;
     private MAAgentManager _agentManager;
     private MATimeStepManager _timeManager;
+    private CarInputActions _carControls;
 
     void Start()
     {
         _dataHub = MADataHub.Instance;
         _agentManager = MAAgentManager.Instance;
         _timeManager = MATimeStepManager.Instance;
+        _carControls = new CarInputActions();
+        _carControls.Enable();
 
         if (selectedAgentIndexInput != null)
         {
@@ -71,12 +80,27 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
             // Add the listener via code (safer than manual Inspector linking)
             selectedAgentIndexInput.onEndEdit.AddListener(OnEndStringEdit);
         }
+
+        UpdateToggleButtonUI();
     }
 
     public void OnEndStringEdit(string str)
     {
         selectedAgentIndex = Mathf.Clamp(int.Parse(str), 0, _dataHub.numberOfAgents - 1);
+        selectedAgentIndexInput.text = selectedAgentIndex.ToString();
         Debug.Log($"Updated selectedAgentIndex to {selectedAgentIndex}!");
+    }
+
+    public void ToggleControlMode()
+    {
+        useManualControl = !useManualControl;
+        UpdateToggleButtonUI();
+    }
+
+    private void UpdateToggleButtonUI()
+    {
+        if (buttonLabel != null)
+            buttonLabel.text = useManualControl ? "Manual" : "Automatic";
     }
 
     // Standard Update: Used ONLY for Frame Rate calculation (visuals)
@@ -110,6 +134,19 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
     // =================================================================
     public void TimeStep()
     {
+        int idx = selectedAgentIndex;
+
+        if (useManualControl)
+        {
+            var db = MADataHub.Instance;
+            if (db != null)
+            {
+                Vector2 inputVector = _carControls.Car.Movement.ReadValue<Vector2>();
+                _dataHub.throttle[idx] = inputVector.y;
+                _dataHub.steering[idx] = inputVector.x;
+            }
+        }
+
         if (!this.isActiveAndEnabled)
             return;
 
@@ -119,9 +156,6 @@ public class MAInfoPanelUpdater : MonoBehaviour, ITimeStepper
 
         if (_dataHub == null || _timeManager == null) return;
         if (_dataHub.numberOfAgents == 0) return;
-
-        // 2. Index
-        int idx = selectedAgentIndex;
 
         // ---------------------------------------------------------
         // A. GLOBAL DATA

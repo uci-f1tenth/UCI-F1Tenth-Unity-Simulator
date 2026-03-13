@@ -271,7 +271,7 @@ GameObject:
   - component: {fileID: 112286234}
   m_Layer: 0
   m_Name: RR Wheel Collider
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -302,7 +302,7 @@ WheelCollider:
   m_Center: {x: 0, y: 0.0125, z: 0}
   m_Radius: 0.06
   m_SuspensionSpring:
-    spring: 500
+    spring: 2500
     damper: 50
     targetPosition: 0.5
   m_SuspensionDistance: 0.05
@@ -54807,7 +54807,7 @@ GameObject:
   - component: {fileID: 736693557}
   m_Layer: 0
   m_Name: FL Wheel Collider
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -54838,7 +54838,7 @@ WheelCollider:
   m_Center: {x: 0, y: 0.0125, z: 0}
   m_Radius: 0.06
   m_SuspensionSpring:
-    spring: 500
+    spring: 2500
     damper: 50
     targetPosition: 0.5
   m_SuspensionDistance: 0.05
@@ -58944,7 +58944,7 @@ GameObject:
   - component: {fileID: 1270479656}
   m_Layer: 0
   m_Name: RL Wheel Collider
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -58975,7 +58975,7 @@ WheelCollider:
   m_Center: {x: 0, y: 0.0125, z: 0}
   m_Radius: 0.06
   m_SuspensionSpring:
-    spring: 500
+    spring: 2500
     damper: 50
     targetPosition: 0.5
   m_SuspensionDistance: 0.05
@@ -60160,7 +60160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7adef12063713554b972534e9b839132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  numberOfPoints: 270
+  numberOfPoints: 180
   minAngleRad: -2.356194
   maxAngleRad: 2.356194
   minRange: 0.01
@@ -60973,7 +60973,7 @@ GameObject:
   - component: {fileID: 1449415406}
   m_Layer: 0
   m_Name: FR Wheel Collider
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -61004,7 +61004,7 @@ WheelCollider:
   m_Center: {x: 0, y: 0.0125, z: 0}
   m_Radius: 0.06
   m_SuspensionSpring:
-    spring: 500
+    spring: 2500
     damper: 50
     targetPosition: 0.5
   m_SuspensionDistance: 0.05
@@ -62045,9 +62045,9 @@ MonoBehaviour:
   resetCooldown: 0.05
   crashPenalty: -50
   velocityReward: 0.1
-  survivalReward: 0.075
-  idlePenalty: -0.1
-  erraticSteeringPenalty: -0.005
+  survivalReward: 0.05
+  idlePenalty: -0.5
+  erraticSteeringPenalty: -0.05
 --- !u!54 &1594770851
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -63505,7 +63505,7 @@ GameObject:
   - component: {fileID: 1940930555}
   m_Layer: 0
   m_Name: Main Camera
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -65200,7 +65200,7 @@ GameObject:
   - component: {fileID: 467636750}
   m_Layer: 0
   m_Name: FR Wheel
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -65289,7 +65289,7 @@ GameObject:
   - component: {fileID: 919132149621370709}
   m_Layer: 0
   m_Name: F1 Vehicle
-  m_TagString: Player
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -65867,8 +65867,8 @@ MonoBehaviour:
   respawnHeightOffset: 0
   checkpointPassReward: 5
   wrongCheckpointPenalty: -5
-  lapCompletionReward: 50
-  bestLapBonus: 20
+  lapCompletionReward: 100
+  bestLapBonus: 500
   showVisualizer: 1
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   finishLineColor: {r: 1, g: 0, b: 0, a: 1}
@@ -66156,7 +66156,7 @@ GameObject:
   - component: {fileID: 467636751}
   m_Layer: 0
   m_Name: FL Wheel
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -66253,7 +66253,7 @@ GameObject:
   - component: {fileID: 467636748}
   m_Layer: 0
   m_Name: RL Wheel
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -66512,7 +66512,7 @@ GameObject:
   - component: {fileID: 467636755}
   m_Layer: 0
   m_Name: Frame
-  m_TagString: Player
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -66566,7 +66566,7 @@ GameObject:
   - component: {fileID: 467636747}
   m_Layer: 0
   m_Name: RR Wheel
-  m_TagString: Untagged
+  m_TagString: Agent Tag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

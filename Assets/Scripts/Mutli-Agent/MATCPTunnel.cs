@@ -91,8 +91,9 @@ public class MATCPTunnel : MonoBehaviour
 
     public void OnEndStringEdit(string str)
     {
-        int newRenderInterval = int.Parse(str);
+        int newRenderInterval = Math.Max(int.Parse(str), 1);
         OnDemandRendering.renderFrameInterval = newRenderInterval;
+        renderFrameIntervalInput.text = OnDemandRendering.renderFrameInterval.ToString();
         Debug.Log($"Updated currentRenderInterval to {newRenderInterval}!");
     }
 

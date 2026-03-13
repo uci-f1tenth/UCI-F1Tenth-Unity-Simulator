@@ -32,6 +32,8 @@ public class MAAgentVisualizer : MonoBehaviour
 
     [Header("--- Camera Control ---")]
     public Camera mainCamera;
+    public Button cameraModeNextButton;
+    public Button cameraModePrevButton;
     public TextMeshProUGUI cameraModeText;
     [Range(0f, 100f)] public float smoothSpeed = 10f;
     public List<CameraPreset> cameraViews = new List<CameraPreset>();
@@ -80,6 +82,13 @@ public class MAAgentVisualizer : MonoBehaviour
         {
             cameraViews.Add(new CameraPreset { name = "Default Chase" });
         }
+
+        if (cameraModeNextButton != null)
+            cameraModeNextButton.onClick.AddListener(NextCamera);
+
+        if (cameraModePrevButton != null)
+            cameraModePrevButton.onClick.AddListener(PrevCamera);
+
         UpdateActiveView();
     }
 
@@ -100,7 +109,7 @@ public class MAAgentVisualizer : MonoBehaviour
     /// <summary>
     /// Hook this to your "Next Camera" Button
     /// </summary>
-    public void NextCamera()
+    private void NextCamera()
     {
         _currentCamIndex = (_currentCamIndex + 1) % cameraViews.Count;
         UpdateActiveView();
@@ -109,7 +118,7 @@ public class MAAgentVisualizer : MonoBehaviour
     /// <summary>
     /// Hook this to your "Prev Camera" Button
     /// </summary>
-    public void PrevCamera()
+    private void PrevCamera()
     {
         _currentCamIndex--;
         if (_currentCamIndex < 0) _currentCamIndex = cameraViews.Count - 1;
@@ -131,13 +140,8 @@ public class MAAgentVisualizer : MonoBehaviour
     {
         if (agent == null) return;
 
-        // 1. Always update the target (so camera works even if lines are off)
+        // Always update the target (so camera works even if lines are off)
         _agentToDraw = agent;
-        _frameDrawRequest = Time.frameCount;
-
-        // 2. Sync Wheels (Visual Mesh Update)
-        // Only needed if we are actually looking at this agent
-        agent.SyncWheels();
     }
 
     // =================================================================
@@ -148,9 +152,14 @@ public class MAAgentVisualizer : MonoBehaviour
     {
         if (mainCamera == null || _agentToDraw == null || _activeView == null) return;
 
+        _frameDrawRequest = Time.frameCount;
+
         // Only move camera if we received a request this frame 
         // (This prevents camera ghosting if the simulation is paused or UI deselected)
         if (Time.frameCount > _frameDrawRequest + 1) return;
+
+        // Sync the wheels
+        _agentToDraw.SyncWheels();
 
         if (_activeView.mode == CameraMode.Chase)
         {
@@ -254,10 +263,24 @@ public class MAAgentVisualizer : MonoBehaviour
         Vector3 velocity = (_agentToDraw.rb != null) ? _agentToDraw.rb.linearVelocity : Vector3.zero;
         DrawLine(centerPos, centerPos + (velocity * velocityScale), colorVelocity);
 
-        // 2. Acceleration (Red)
-        Vector3 accel = db.linAccelMS[idx];
-        Vector3 accelStart = centerPos + Vector3.up * 0.05f;
-        DrawLine(accelStart, accelStart + (accel * accelScale), colorAccel);
+        // 2. ACCELERATION (Red) - From DataHub
+        Vector3 rawAccel = db.linAccelMS[idx];
+
+        // --- STEP A: Reverse the ROS/Real-World Axis Conversion ---
+        // (Assuming MAIMUSensor.convertToRealWorldAxes is TRUE)
+        // ROS Axes:   X = Forward, Y = Left,          Z = Up
+        // Unity Axes: Z = Forward, X = Right (-Left), Y = Up
+        Vector3 unityLocalAccel = new Vector3(-rawAccel.y, rawAccel.z, rawAccel.x);
+
+        // Note: If you ever turn OFF 'convertToRealWorldAxes' in the IMU, 
+        // you would just do: Vector3 unityLocalAccel = rawAccel;
+
+        // --- STEP B: Convert Local Space to World Space ---
+        // This rotates the acceleration vector so it aligns with the car's current heading
+        Vector3 worldAccel = _agentToDraw.transform.TransformDirection(unityLocalAccel);
+
+        Vector3 accelStart = centerPos + Vector3.up * 0.05f; // Slight offset to avoid Z-fighting
+        DrawLine(accelStart, accelStart + (worldAccel * accelScale), colorAccel);
 
         // 3. Forward (Yellow)
         Vector3 forward = _agentToDraw.transform.forward;

@@ -72,10 +72,12 @@ public class MAVehicleController : MonoBehaviour, ITimeStepper
         if (dataHub == null || agentIndex == -1 || agentIndex >= dataHub.numberOfAgents) return;
 
         // 1. READ INPUTS (From DataHub)
-        {
+        /*
+        { // Testing
             dataHub.throttle[agentIndex] = Random.Range(-1f, 1f);
             dataHub.steering[agentIndex] = Random.Range(-1f, 1f);
         }
+        */
 
         float vInput = dataHub.throttle[agentIndex];
         float hInput = dataHub.steering[agentIndex];
