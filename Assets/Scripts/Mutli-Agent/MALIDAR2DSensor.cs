@@ -53,7 +53,7 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
         _vehicleController = GetComponentInParent<MAVehicleController>();
 
         // Grab resolution dynamically from the Hub so it always matches
-        _resolution = _dataHub.lidarResolution;
+        _resolution = _dataHub.lidarCount;
 
         InitializeBuffers();
         PrecomputeDirections();

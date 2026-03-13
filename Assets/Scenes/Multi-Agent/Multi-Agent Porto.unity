@@ -13552,11 +13552,11 @@ MonoBehaviour:
   ipInput: {fileID: 1366543132}
   portInput: {fileID: 553708094}
   renderFrameIntervalInput: {fileID: 1489493790}
+  connectButton: {fileID: 1300600800}
   buttonLabel: {fileID: 2053822166}
   maxLidarDist: 20
   buildRenderInterval: 30
   editorRenderInterval: 1
-  isConnected: 0
 --- !u!114 &1838572745
 MonoBehaviour:
   m_ObjectHideFlags: 0

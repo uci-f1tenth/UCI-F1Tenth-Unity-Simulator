@@ -12,7 +12,7 @@ public class MADataHub : MonoBehaviour, ITimeStepper
     public int numberOfAgents = 2;
 
     [Header("Network & LIDAR Configuration")]
-    public int lidarResolution = 270;
+    public int lidarCount = 270;
     public float lidarUpdateRateHz = 40f;
     public float lidarMinAngleDeg = -135f;
     public float lidarMaxAngleDeg = 135f;
@@ -101,7 +101,7 @@ public class MADataHub : MonoBehaviour, ITimeStepper
         lidarRanges = new float[numberOfAgents][];
         for (int i = 0; i < numberOfAgents; i++)
         {
-            lidarRanges[i] = new float[lidarResolution];
+            lidarRanges[i] = new float[lidarCount];
         }
 
         Debug.Log($"<color=cyan>MADataHub: Initialized buffers for {numberOfAgents} agents.</color>");

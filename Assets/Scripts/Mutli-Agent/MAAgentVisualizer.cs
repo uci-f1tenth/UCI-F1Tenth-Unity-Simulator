@@ -277,11 +277,11 @@ public class MAAgentVisualizer : MonoBehaviour
         int idx = _agentToDraw.agentIndex;
 
         // Reallocate native arrays if the resolution changes at runtime
-        if (!_lidarRangesNative.IsCreated || _lidarResolution != db.lidarResolution)
+        if (!_lidarRangesNative.IsCreated || _lidarResolution != db.lidarCount)
         {
             DisposeBuffers();
 
-            _lidarResolution = db.lidarResolution;
+            _lidarResolution = db.lidarCount;
             _lidarRangesNative = new NativeArray<float>(_lidarResolution, Allocator.Persistent);
             _meshVertsNative = new NativeArray<Vector3>(_lidarResolution * 2, Allocator.Persistent);
             _meshColorsNative = new NativeArray<Color>(_lidarResolution * 2, Allocator.Persistent);
