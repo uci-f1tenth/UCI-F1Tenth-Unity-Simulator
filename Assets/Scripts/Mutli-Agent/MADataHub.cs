@@ -11,8 +11,14 @@ public class MADataHub : MonoBehaviour, ITimeStepper
     [Tooltip("Number of agents to allocate buffers for")]
     public int numberOfAgents = 2;
 
-    [Header("Network Configuration")]
+    [Header("Network & LIDAR Configuration")]
     public int lidarResolution = 270;
+    public float lidarUpdateRateHz = 40f;
+    public float lidarMinAngleDeg = -135f;
+    public float lidarMaxAngleDeg = 135f;
+    public float lidarMinRange = 0.1f;
+    public float lidarMaxRange = 20f;
+    public MALidarScanDirection lidarScanDirection = MALidarScanDirection.CounterClockwise;
 
     [Header("Global Performance")]
     public float fps;

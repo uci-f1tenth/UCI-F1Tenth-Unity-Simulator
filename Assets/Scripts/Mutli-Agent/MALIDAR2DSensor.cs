@@ -19,14 +19,7 @@ public enum MALidarScanDirection
 /// </summary>
 public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
 {
-    [Header("--- Lidar Configuration ---")]
-    [Tooltip("Target update rate. 0 = Every Physics Step")]
-    public float updateRateHz = 40f;
-    public float minAngleRad = -Mathf.PI;
-    public float maxAngleRad = Mathf.PI;
-    public float minRange = 0.1f;
-    public float maxRange = 20f;
-    public MALidarScanDirection scanDirection = MALidarScanDirection.CounterClockwise;
+    [Header("--- Lidar Configuration is Located in Data Hub ---")]
 
     [Header("--- Settings ---")]
     public LayerMask detectionMask = ~0;
@@ -81,13 +74,14 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
 
     private void PrecomputeDirections()
     {
-        float startAngle = minAngleRad;
-        float endAngle = maxAngleRad;
+        // PULL DIRECTLY FROM HUB AND CONVERT TO RADIANS
+        float startAngle = _dataHub.lidarMinAngleDeg * Mathf.Deg2Rad;
+        float endAngle = _dataHub.lidarMaxAngleDeg * Mathf.Deg2Rad;
 
-        if (scanDirection == MALidarScanDirection.CounterClockwise)
+        if (_dataHub.lidarScanDirection == MALidarScanDirection.CounterClockwise)
         {
-            startAngle = maxAngleRad;
-            endAngle = minAngleRad;
+            startAngle = _dataHub.lidarMaxAngleDeg * Mathf.Deg2Rad;
+            endAngle = _dataHub.lidarMinAngleDeg * Mathf.Deg2Rad;
         }
 
         float angleStep = (endAngle - startAngle) / (_resolution - 1);
@@ -115,7 +109,7 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
         if (_dataHub == null || _vehicleController == null) return;
 
         // Apply realistic update rate (Jitter simulated)
-        if (updateRateHz > 0f && _timeManager.fixedTime < _nextUpdateTime) return;
+        if (_dataHub.lidarUpdateRateHz > 0f && _timeManager.fixedTime < _nextUpdateTime) return;
 
         Profiler.BeginSample("MALidar.TotalScanTime");
 
@@ -127,7 +121,7 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
         for (int i = 0; i < _resolution; i++)
         {
             Vector3 worldDir = rotation * (Vector3)_localDirections[i];
-            _commands[i] = new RaycastCommand(origin, worldDir, _qParams, maxRange);
+            _commands[i] = new RaycastCommand(origin, worldDir, _qParams, _dataHub.lidarMaxRange); // Hub Max Range
         }
 
         // 2. Schedule Physics Raycasts
@@ -138,8 +132,8 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
         {
             hits = _results,
             ranges = _rangesNative,
-            minRange = minRange,
-            maxRange = maxRange,
+            minRange = _dataHub.lidarMinRange, // Hub Min Range
+            maxRange = _dataHub.lidarMaxRange, // Hub Max Range
             noiseSigma = noiseSigma,
             dropoutProb = dropoutProbability,
             seed = (uint)(Time.frameCount + agentIdx + 1) // Unique seed per agent
@@ -155,7 +149,8 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
         Profiler.EndSample();
 
         // Schedule next scan
-        if (updateRateHz > 0f) _nextUpdateTime = _timeManager.fixedTime + (1f / updateRateHz);
+        if (_dataHub.lidarUpdateRateHz > 0f)
+            _nextUpdateTime = _timeManager.fixedTime + (1f / _dataHub.lidarUpdateRateHz);
     }
 
     // =================================================================

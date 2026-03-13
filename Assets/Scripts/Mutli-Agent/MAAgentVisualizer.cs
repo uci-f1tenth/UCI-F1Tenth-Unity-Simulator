@@ -3,32 +3,34 @@ using UnityEngine.Rendering;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using Unity.Burst;
 
 public class MAAgentVisualizer : MonoBehaviour
 {
     public static MAAgentVisualizer Instance { get; private set; }
 
     // =================================================================
-    //                          CAMERA SYSTEM
+    //                          STRUCTS & ENUMS
     // =================================================================
+
     [System.Serializable]
     public class CameraPreset
     {
         public string name = "New View";
         public CameraMode mode = CameraMode.Chase;
-
-        [Header("Chase Settings (Relative)")]
-        [Tooltip("Position relative to the car (e.g., 0, 2, -5 for standard chase)")]
         public Vector3 localPosition = new Vector3(0, 2, -5);
-        [Tooltip("Point relative to car to look at (e.g., 0, 0, 2)")]
         public Vector3 lookAtOffset = Vector3.zero;
-
-        [Header("Static Settings (World)")]
-        [Tooltip("Drag a scene object here to use its position/rotation")]
         public Transform staticAnchor;
     }
 
     public enum CameraMode { Chase, Static }
+
+    // =================================================================
+    //                        INSPECTOR VARIABLES
+    // =================================================================
 
     [Header("--- Camera Control ---")]
     public Camera mainCamera;
@@ -38,115 +40,106 @@ public class MAAgentVisualizer : MonoBehaviour
     [Range(0f, 100f)] public float smoothSpeed = 10f;
     public List<CameraPreset> cameraViews = new List<CameraPreset>();
 
-    // Internal Camera State
-    private int _currentCamIndex = 0;
-    private CameraPreset _activeView;
-
-    // =================================================================
-    //                          DEBUG VISUALS
-    // =================================================================
     [Header("--- Visuals UI ---")]
-    [Tooltip("Connect this to your UI Toggle. If off, lines are hidden, but camera still works.")]
     public Toggle masterToggle;
 
-    [Header("--- Visualization Settings ---")]
+    [Header("--- Line Visualization ---")]
     public float velocityScale = 0.5f;
     public float accelScale = 0.2f;
     public float steeringLineLength = 2.0f;
-
-    [Header("--- Colors ---")]
     public Color colorVelocity = Color.blue;
     public Color colorAccel = Color.red;
     public Color colorForward = Color.yellow;
     public Color colorSteer = Color.green;
 
-    // Internal Render State
-    private Material _lineMaterial;
-    private MAVehicleController _agentToDraw;
-    private int _frameDrawRequest;
+    [Header("--- Lidar Visualization ---")]
+    public bool showLidar = true;
+    public Color nearColor = Color.red;
+    public Color farColor = Color.green;
 
     // =================================================================
-    //                          INIT
+    //                      INTERNAL STATE VARIABLES
+    // =================================================================
+
+    // Camera State
+    private int _currentCamIndex = 0;
+    private CameraPreset _activeView;
+
+    // Render & Agent State
+    private Material _lineMaterial;
+    private MAVehicleController _agentToDraw;
+    // Cached for performance to avoid GetComponentsInChildren every frame
+    private WheelCollider[] _cachedWheels;
+    private Transform _cachedLidarTransform; // NEW: Cache the Lidar position
+    private int _frameDrawRequest;
+
+    // Lidar Mesh State
+    private Mesh _lidarMesh;
+    private GameObject _lidarRenderObj;
+    private NativeArray<float> _lidarRangesNative;
+    private NativeArray<Vector3> _meshVertsNative;
+    private NativeArray<Color> _meshColorsNative;
+    private int[] _meshIndices;
+    private int _lidarResolution;
+
+    // =================================================================
+    //                 UNITY LIFECYCLE (INIT & TEARDOWN)
     // =================================================================
 
     private void Awake()
     {
+        // Enforce Singleton pattern
         if (Instance != null && Instance != this) { Destroy(this); return; }
         Instance = this;
 
-        // Default to main camera if not assigned
         if (mainCamera == null) mainCamera = Camera.main;
 
-        // Validate camera list
-        if (cameraViews.Count == 0)
-        {
-            cameraViews.Add(new CameraPreset { name = "Default Chase" });
-        }
-
-        if (cameraModeNextButton != null)
-            cameraModeNextButton.onClick.AddListener(NextCamera);
-
-        if (cameraModePrevButton != null)
-            cameraModePrevButton.onClick.AddListener(PrevCamera);
+        // Ensure there is at least one camera view available
+        if (cameraViews.Count == 0) cameraViews.Add(new CameraPreset { name = "Default Chase" });
+        if (cameraModeNextButton != null) cameraModeNextButton.onClick.AddListener(NextCamera);
+        if (cameraModePrevButton != null) cameraModePrevButton.onClick.AddListener(PrevCamera);
 
         UpdateActiveView();
+        InitializeLidarMesh();
+        CreateLineMaterial();
     }
 
-    private void OnEnable()
+    private void InitializeLidarMesh()
     {
-        RenderPipelineManager.endContextRendering += OnEndContextRendering;
+        // Create a dedicated object to hold the Lidar lines
+        _lidarRenderObj = new GameObject("Visualizer_LidarMesh");
+        _lidarRenderObj.transform.SetParent(this.transform);
+
+        var mf = _lidarRenderObj.AddComponent<MeshFilter>();
+        var mr = _lidarRenderObj.AddComponent<MeshRenderer>();
+
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader != null) mr.sharedMaterial = new Material(shader);
+
+        // Optimize renderer since this is just for debug lines
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        mr.receiveShadows = false;
+
+        _lidarMesh = new Mesh { name = "LidarLineMesh" };
+        _lidarMesh.MarkDynamic();
+        mf.mesh = _lidarMesh;
     }
 
-    private void OnDisable()
+    private void OnEnable() { RenderPipelineManager.endContextRendering += OnEndContextRendering; }
+    private void OnDisable() { RenderPipelineManager.endContextRendering -= OnEndContextRendering; }
+
+    private void OnDestroy()
     {
-        RenderPipelineManager.endContextRendering -= OnEndContextRendering;
+        DisposeBuffers();
     }
 
-    // =================================================================
-    //                        PUBLIC API (UI)
-    // =================================================================
-
-    /// <summary>
-    /// Hook this to your "Next Camera" Button
-    /// </summary>
-    private void NextCamera()
+    // Safely cleanup native arrays to prevent memory leaks
+    private void DisposeBuffers()
     {
-        _currentCamIndex = (_currentCamIndex + 1) % cameraViews.Count;
-        UpdateActiveView();
+        if (_lidarRangesNative.IsCreated) _lidarRangesNative.Dispose();
+        if (_meshVertsNative.IsCreated) _meshVertsNative.Dispose();
+        if (_meshColorsNative.IsCreated) _meshColorsNative.Dispose();
     }
-
-    /// <summary>
-    /// Hook this to your "Prev Camera" Button
-    /// </summary>
-    private void PrevCamera()
-    {
-        _currentCamIndex--;
-        if (_currentCamIndex < 0) _currentCamIndex = cameraViews.Count - 1;
-        UpdateActiveView();
-    }
-
-    private void UpdateActiveView()
-    {
-        _activeView = cameraViews[_currentCamIndex];
-        // Update a UI Text label here to show the camera name
-        if (cameraModeText != null) cameraModeText.text = _activeView.name;
-    }
-
-    /// <summary>
-    /// Called by MAInfoPanelUpdater every frame.
-    /// Updates camera position and registers GL drawing.
-    /// </summary>
-    public void DrawVisuals(MAVehicleController agent)
-    {
-        if (agent == null) return;
-
-        // Always update the target (so camera works even if lines are off)
-        _agentToDraw = agent;
-    }
-
-    // =================================================================
-    //                       CAMERA LOGIC
-    // =================================================================
 
     private void LateUpdate()
     {
@@ -154,21 +147,52 @@ public class MAAgentVisualizer : MonoBehaviour
 
         _frameDrawRequest = Time.frameCount;
 
-        // Only move camera if we received a request this frame 
-        // (This prevents camera ghosting if the simulation is paused or UI deselected)
-        if (Time.frameCount > _frameDrawRequest + 1) return;
-
-        // Sync the wheels
+        // Ensure the visual representation of wheels matches physics state
         _agentToDraw.SyncWheels();
 
-        if (_activeView.mode == CameraMode.Chase)
+        // Handle camera tracking based on selected mode
+        if (_activeView.mode == CameraMode.Chase) HandleChaseCamera();
+        else if (_activeView.mode == CameraMode.Static) HandleStaticCamera();
+
+        UpdateLidarMesh();
+    }
+
+    // =================================================================
+    //                     PUBLIC API & CAMERA LOGIC
+    // =================================================================
+
+    // Call this from your UI or Manager to switch which agent is being observed
+    public void DrawVisuals(MAVehicleController agent)
+    {
+        if (agent == null) return;
+        _agentToDraw = agent;
+
+        // CACHE THE WHEELS HERE
+        // Prevents massive framerate drop in rendering loop by avoiding Find/GetComponents
+        _cachedWheels = _agentToDraw.GetComponentsInChildren<WheelCollider>();
+
+        // NEW: CACHE THE LIDAR TRANSFORM
+        // Look for the MALIDAR2DSensor component on the agent or its children
+        var lidarSensor = _agentToDraw.GetComponentInChildren<MALIDAR2DSensor>();
+        if (lidarSensor != null)
         {
-            HandleChaseCamera();
+            _cachedLidarTransform = lidarSensor.transform;
         }
-        else if (_activeView.mode == CameraMode.Static)
+        else
         {
-            HandleStaticCamera();
+            // Fallback just in case the sensor is missing, default to agent root
+            _cachedLidarTransform = _agentToDraw.transform;
+            Debug.LogWarning($"Visualizer: No MALIDAR2DSensor found on agent {_agentToDraw.name}. Lidar mesh will render at agent root.");
         }
+    }
+
+    private void NextCamera() { _currentCamIndex = (_currentCamIndex + 1) % cameraViews.Count; UpdateActiveView(); }
+    private void PrevCamera() { _currentCamIndex--; if (_currentCamIndex < 0) _currentCamIndex = cameraViews.Count - 1; UpdateActiveView(); }
+
+    private void UpdateActiveView()
+    {
+        _activeView = cameraViews[_currentCamIndex];
+        if (cameraModeText != null) cameraModeText.text = _activeView.name;
     }
 
     private void HandleChaseCamera()
@@ -176,39 +200,25 @@ public class MAAgentVisualizer : MonoBehaviour
         if (_agentToDraw == null) return;
         Transform target = _agentToDraw.transform;
 
-        // 1. Calculate Target Position (Where the camera wants to be)
         Vector3 desiredPos = target.TransformPoint(_activeView.localPosition);
-
-        // 2. Calculate Look Target (What the camera wants to look at)
         Vector3 lookAtTarget = target.TransformPoint(_activeView.lookAtOffset);
 
-        // 3. Move Position (Smoothly)
-        // We move the camera *before* calculating rotation to ensure the vector is accurate
+        // Smoothly move position
         if (smoothSpeed > 0f)
-        {
             mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, desiredPos, Time.deltaTime * smoothSpeed);
-        }
         else
-        {
             mainCamera.transform.position = desiredPos;
-        }
 
-        // 4. Calculate Direction Vector
         Vector3 lookDir = lookAtTarget - mainCamera.transform.position;
 
-        // --- SAFETY CHECK ---
-        // If the camera overlaps the target (vector length ~0), skip rotation to avoid the error.
+        // Ensure we don't calculate LookRotation with a zero vector
         if (lookDir.sqrMagnitude > 0.001f)
         {
             Quaternion targetRot = Quaternion.LookRotation(lookDir);
             if (smoothSpeed > 0f)
-            {
                 mainCamera.transform.rotation = Quaternion.Slerp(mainCamera.transform.rotation, targetRot, Time.deltaTime * smoothSpeed);
-            }
             else
-            {
                 mainCamera.transform.rotation = targetRot;
-            }
         }
     }
 
@@ -216,39 +226,160 @@ public class MAAgentVisualizer : MonoBehaviour
     {
         if (_activeView.staticAnchor != null)
         {
-            // Just snap to the static transform
-            // We use Lerp just in case you switch cameras rapidly, so it doesn't "cut" instantly
-            mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, _activeView.staticAnchor.position, Time.deltaTime * 5f);
-            mainCamera.transform.rotation = Quaternion.Slerp(mainCamera.transform.rotation, _activeView.staticAnchor.rotation, Time.deltaTime * 5f);
-        }
-        else
-        {
-            // If user forgot to assign a transform, look at the car from a generic high point
-            // This is a fallback
-            mainCamera.transform.LookAt(_agentToDraw.transform);
+            mainCamera.transform.position = _activeView.staticAnchor.position;
+
+            if (_agentToDraw != null)
+            {
+                Vector3 lookAtPoint = _agentToDraw.transform.position + _activeView.lookAtOffset;
+                mainCamera.transform.LookAt(lookAtPoint);
+            }
+            else
+            {
+                // Fallback to the anchor's default rotation if no agent is selected
+                mainCamera.transform.rotation = _activeView.staticAnchor.rotation;
+            }
         }
     }
 
     // =================================================================
-    //                      DEBUG LINE RENDERING
+    //                 LIDAR MESH GENERATION (BURST)
     // =================================================================
 
-    private void OnEndContextRendering(ScriptableRenderContext context, System.Collections.Generic.List<Camera> cameras)
+    private void UpdateLidarMesh()
     {
-        // 1. Check if we should draw lines
-        if (_agentToDraw == null || !Application.isPlaying) return;
-        if (Time.frameCount > _frameDrawRequest + 1) return;
+        bool isVisualizing = (masterToggle == null || masterToggle.isOn) && showLidar;
 
-        // UI Toggle Check: If the toggle is OFF, we exit here. 
-        // (Note: We did this AFTER the camera logic so camera still works)
-        if (masterToggle != null && !masterToggle.isOn) return;
-
-        CreateLineMaterial();
-        _lineMaterial.SetPass(0);
+        // Clear the mesh if visualization is off or missing references
+        if (!isVisualizing || _agentToDraw == null || MADataHub.Instance == null)
+        {
+            _lidarMesh.Clear();
+            return;
+        }
 
         var db = MADataHub.Instance;
-        if (db == null) return;
         int idx = _agentToDraw.agentIndex;
+
+        // Reallocate native arrays if the resolution changes at runtime
+        if (!_lidarRangesNative.IsCreated || _lidarResolution != db.lidarResolution)
+        {
+            DisposeBuffers();
+
+            _lidarResolution = db.lidarResolution;
+            _lidarRangesNative = new NativeArray<float>(_lidarResolution, Allocator.Persistent);
+            _meshVertsNative = new NativeArray<Vector3>(_lidarResolution * 2, Allocator.Persistent);
+            _meshColorsNative = new NativeArray<Color>(_lidarResolution * 2, Allocator.Persistent);
+
+            // Setup indices for Line topology (0,1, 2,3, 4,5...)
+            _meshIndices = new int[_lidarResolution * 2];
+            for (int i = 0; i < _meshIndices.Length; i++) _meshIndices[i] = i;
+        }
+
+        // NEW: Align the mesh root with the actual Lidar Sensor, not the Agent root
+        if (_cachedLidarTransform != null)
+        {
+            _lidarRenderObj.transform.position = _cachedLidarTransform.position;
+            _lidarRenderObj.transform.rotation = _cachedLidarTransform.rotation;
+        }
+
+        // Copy managed array data into the native array for Burst Job processing
+        _lidarRangesNative.CopyFrom(db.lidarRanges[idx]);
+
+        float sAngle = db.lidarMinAngleDeg * Mathf.Deg2Rad;
+        float eAngle = db.lidarMaxAngleDeg * Mathf.Deg2Rad;
+
+        // Adjust angles depending on sweep direction
+        if (db.lidarScanDirection == MALidarScanDirection.Clockwise)
+        {
+            sAngle = db.lidarMaxAngleDeg * Mathf.Deg2Rad;
+            eAngle = db.lidarMinAngleDeg * Mathf.Deg2Rad;
+        }
+
+        GenerateLidarMeshJob meshJob = new GenerateLidarMeshJob
+        {
+            ranges = _lidarRangesNative,
+            verts = _meshVertsNative,
+            colors = _meshColorsNative,
+            res = _lidarResolution,
+            maxRange = db.lidarMaxRange,
+            startAngle = sAngle,
+            endAngle = eAngle,
+            colorNear = new float4(nearColor.r, nearColor.g, nearColor.b, nearColor.a),
+            colorFar = new float4(farColor.r, farColor.g, farColor.b, farColor.a)
+        };
+
+        // Execute the job on the main thread (fast enough due to Burst)
+        meshJob.Run(_lidarResolution);
+
+        // Apply updated data to the Mesh
+        _lidarMesh.SetVertices(_meshVertsNative);
+        _lidarMesh.SetColors(_meshColorsNative);
+        _lidarMesh.SetIndices(_meshIndices, MeshTopology.Lines, 0);
+        _lidarMesh.RecalculateBounds();
+    }
+
+    [BurstCompile]
+    struct GenerateLidarMeshJob : IJobFor
+    {
+        [ReadOnly] public NativeArray<float> ranges;
+
+        // Attributes required because we are writing to indices beyond 'i' (i*2 and i*2+1)
+        [WriteOnly, NativeDisableParallelForRestriction] public NativeArray<Vector3> verts;
+        [WriteOnly, NativeDisableParallelForRestriction] public NativeArray<Color> colors;
+
+        public int res;
+        public float maxRange;
+        public float startAngle;
+        public float endAngle;
+        public float4 colorNear;
+        public float4 colorFar;
+
+        public void Execute(int i)
+        {
+            int vIndex = i * 2;
+            float dist = ranges[i];
+
+            // Protect against divide-by-zero if resolution is ever set to 1
+            float angleStep = res > 1 ? (endAngle - startAngle) / (res - 1) : 0f;
+            float currentAngle = startAngle + (i * angleStep);
+
+            // FIXED TRIGONOMETRY for Unity: 
+            // Sine handles X, Cosine handles Z so that 0 degrees points Forward (+Z)
+            float3 dir = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
+
+            float t = dist / maxRange;
+            float4 cVec = math.lerp(colorNear, colorFar, t);
+            Color finalColor = new Color(cVec.x, cVec.y, cVec.z, cVec.w);
+
+            // Origin vertex of the line
+            verts[vIndex] = Vector3.zero;
+            colors[vIndex] = finalColor;
+
+            // Hit vertex of the line
+            verts[vIndex + 1] = new Vector3(dir.x * dist, dir.y * dist, dir.z * dist);
+            colors[vIndex + 1] = finalColor;
+        }
+    }
+
+    // =================================================================
+    //                    GL DEBUG LINE RENDERING
+    // =================================================================
+
+    private void OnEndContextRendering(ScriptableRenderContext context, List<Camera> cameras)
+    {
+        // Prevent drawing stale frames or drawing without an agent
+        if (Time.frameCount > _frameDrawRequest + 1 || _agentToDraw == null) return;
+        if (masterToggle != null && !masterToggle.isOn) return;
+
+        // Ensure we only draw during the main camera's render pass
+        if (!cameras.Contains(mainCamera)) return;
+
+        DrawLineVisuals();
+    }
+
+    private void DrawLineVisuals()
+    {
+        if (_lineMaterial == null) CreateLineMaterial();
+        _lineMaterial.SetPass(0);
 
         GL.PushMatrix();
         GL.Begin(GL.LINES);
@@ -257,66 +388,56 @@ public class MAAgentVisualizer : MonoBehaviour
         if (_agentToDraw.rb != null)
             centerPos = _agentToDraw.transform.TransformPoint(_agentToDraw.rb.centerOfMass);
 
-        // --- DRAWING LOGIC ---
+        var db = MADataHub.Instance;
+        int idx = _agentToDraw.agentIndex;
 
         // 1. Velocity (Blue)
         Vector3 velocity = (_agentToDraw.rb != null) ? _agentToDraw.rb.linearVelocity : Vector3.zero;
         DrawLine(centerPos, centerPos + (velocity * velocityScale), colorVelocity);
 
-        // 2. ACCELERATION (Red) - From DataHub
+        // 2. Acceleration (Red)
+        // Convert ROS axes back to Unity axes, then to World Space
         Vector3 rawAccel = db.linAccelMS[idx];
-
-        // --- STEP A: Reverse the ROS/Real-World Axis Conversion ---
-        // (Assuming MAIMUSensor.convertToRealWorldAxes is TRUE)
-        // ROS Axes:   X = Forward, Y = Left,          Z = Up
-        // Unity Axes: Z = Forward, X = Right (-Left), Y = Up
         Vector3 unityLocalAccel = new Vector3(-rawAccel.y, rawAccel.z, rawAccel.x);
-
-        // Note: If you ever turn OFF 'convertToRealWorldAxes' in the IMU, 
-        // you would just do: Vector3 unityLocalAccel = rawAccel;
-
-        // --- STEP B: Convert Local Space to World Space ---
-        // This rotates the acceleration vector so it aligns with the car's current heading
         Vector3 worldAccel = _agentToDraw.transform.TransformDirection(unityLocalAccel);
 
-        Vector3 accelStart = centerPos + Vector3.up * 0.05f; // Slight offset to avoid Z-fighting
+        Vector3 accelStart = centerPos + Vector3.up * 0.05f; // Slight offset to prevent Z-fighting
         DrawLine(accelStart, accelStart + (worldAccel * accelScale), colorAccel);
 
-        // 3. Forward (Yellow)
+        // 3. Forward Vector (Yellow)
+        // Projects current velocity onto the forward axis to visualize longitudinal speed
         Vector3 forward = _agentToDraw.transform.forward;
         float forwardSpeed = Vector3.Dot(velocity, forward);
         DrawLine(centerPos, centerPos + (forward * forwardSpeed * velocityScale), colorForward);
 
-        // 4. Steering (Green)
+        // 4. Steering Angles (Green) - USING CACHED WHEELS
         float steerAngle = db.steeringAngleDeg[idx];
-        DrawSteeringLogic(_agentToDraw, steerAngle);
+        if (_cachedWheels != null)
+        {
+            foreach (var wheel in _cachedWheels)
+            {
+                if (wheel.transform.localPosition.z > 0) // Filter for Front wheels only
+                {
+                    Vector3 pos = wheel.transform.position;
+
+                    // Draw Ghost Line (Neutral/Straight ahead)
+                    GL.Color(new Color(0, 1, 0, 0.2f));
+                    GL.Vertex(pos);
+                    GL.Vertex(pos + (_agentToDraw.transform.forward * steeringLineLength));
+
+                    // Draw Active Steer Line
+                    Quaternion rot = Quaternion.Euler(0, steerAngle, 0);
+                    Vector3 steerDir = _agentToDraw.transform.rotation * rot * Vector3.forward;
+
+                    GL.Color(colorSteer);
+                    GL.Vertex(pos);
+                    GL.Vertex(pos + (steerDir * steeringLineLength));
+                }
+            }
+        }
 
         GL.End();
         GL.PopMatrix();
-    }
-
-    private void DrawSteeringLogic(MAVehicleController agent, float steerAngle)
-    {
-        foreach (var wheel in agent.GetComponentsInChildren<WheelCollider>())
-        {
-            if (wheel.transform.localPosition.z > 0) // Front wheels only
-            {
-                Vector3 pos = wheel.transform.position;
-
-                // Ghost (Neutral)
-                GL.Color(new Color(0, 1, 0, 0.2f));
-                GL.Vertex(pos);
-                GL.Vertex(pos + (agent.transform.forward * steeringLineLength));
-
-                // Active (Steered)
-                Quaternion rot = Quaternion.Euler(0, steerAngle, 0);
-                Vector3 steerDir = agent.transform.rotation * rot * Vector3.forward;
-
-                GL.Color(colorSteer);
-                GL.Vertex(pos);
-                GL.Vertex(pos + (steerDir * steeringLineLength));
-            }
-        }
     }
 
     private void DrawLine(Vector3 start, Vector3 end, Color col)
@@ -328,10 +449,22 @@ public class MAAgentVisualizer : MonoBehaviour
 
     private void CreateLineMaterial()
     {
-        if (!_lineMaterial)
+        if (_lineMaterial == null)
         {
             Shader shader = Shader.Find("Hidden/Internal-Colored");
-            _lineMaterial = new Material(shader);
+            if (shader != null)
+            {
+                _lineMaterial = new Material(shader);
+                _lineMaterial.hideFlags = HideFlags.HideAndDontSave;
+                _lineMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                _lineMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                _lineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+                _lineMaterial.SetInt("_ZWrite", 0);
+            }
+            else
+            {
+                Debug.LogWarning("Could not find Hidden/Internal-Colored shader for debug lines.");
+            }
         }
     }
 }
