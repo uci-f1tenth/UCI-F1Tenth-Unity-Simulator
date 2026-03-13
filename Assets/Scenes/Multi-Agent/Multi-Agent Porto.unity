@@ -2885,6 +2885,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 525457017}
   m_CullTransparentMesh: 1
+--- !u!1 &548589733
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 548589734}
+  m_Layer: 0
+  m_Name: Top Down
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &548589734
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 548589733}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 8, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1176310834}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!1 &553708092
 GameObject:
   m_ObjectHideFlags: 0
@@ -7533,7 +7564,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1111082243}
   m_Layer: 0
-  m_Name: Bird's Eye
+  m_Name: Bird's Eye Angle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7547,13 +7578,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1111082242}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0.5, y: 0.5, z: -0.5, w: 0.5}
   m_LocalPosition: {x: 0, y: 8, z: 0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1176310834}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 90, z: 0}
 --- !u!1 &1126450824
 GameObject:
   m_ObjectHideFlags: 0
@@ -7986,6 +8017,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1111082243}
+  - {fileID: 548589734}
   m_Father: {fileID: 1838572739}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1177223103
@@ -13512,7 +13544,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   numberOfAgents: 32
-  lidarResolution: 135
+  lidarCount: 270
   lidarUpdateRateHz: 40
   lidarMinAngleDeg: -135
   lidarMaxAngleDeg: 135
@@ -14067,16 +14099,16 @@ MonoBehaviour:
     localPosition: {x: 0, y: 1, z: -1}
     lookAtOffset: {x: 0, y: 0, z: 1}
     staticAnchor: {fileID: 0}
-  - name: Top Down
+  - name: Bird's Eye
     mode: 0
     localPosition: {x: 0, y: 3, z: 0}
-    lookAtOffset: {x: 0, y: 0, z: 0.0005}
-    staticAnchor: {fileID: 0}
-  - name: Bird's Eye
+    lookAtOffset: {x: 0, y: 0, z: 0}
+    staticAnchor: {fileID: 1111082243}
+  - name: Top Down
     mode: 1
     localPosition: {x: 0, y: 0, z: 0}
     lookAtOffset: {x: 0, y: 0, z: 0}
-    staticAnchor: {fileID: 1111082243}
+    staticAnchor: {fileID: 548589734}
   masterToggle: {fileID: 610421776}
   lidarToggle: {fileID: 437465317}
   velocityScale: 0.5

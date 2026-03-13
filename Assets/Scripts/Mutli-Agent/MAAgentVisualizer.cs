@@ -210,27 +210,42 @@ public class MAAgentVisualizer : MonoBehaviour
     private void HandleChaseCamera()
     {
         if (_agentToDraw == null) return;
+
         Transform target = _agentToDraw.transform;
+        Transform camTransform = mainCamera.transform;
 
-        Vector3 desiredPos = target.TransformPoint(_activeView.localPosition);
-        Vector3 lookAtTarget = target.TransformPoint(_activeView.lookAtOffset);
+        // 1. Calculate Target Position
+        // If staticAnchor exists, we use world space offset; otherwise, local relative offset
+        Vector3 targetPos = (_activeView.staticAnchor != null)
+            ? target.position + _activeView.localPosition
+            : target.TransformPoint(_activeView.localPosition);
 
-        // Smoothly move position
-        if (smoothSpeed > 0f)
-            mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, desiredPos, Time.deltaTime * smoothSpeed);
-        else
-            mainCamera.transform.position = desiredPos;
-
-        Vector3 lookDir = lookAtTarget - mainCamera.transform.position;
-
-        // Ensure we don't calculate LookRotation with a zero vector
-        if (lookDir.sqrMagnitude > 0.001f)
+        // 2. Calculate Target Rotation
+        Quaternion targetRot;
+        if (_activeView.staticAnchor != null)
         {
-            Quaternion targetRot = Quaternion.LookRotation(lookDir);
-            if (smoothSpeed > 0f)
-                mainCamera.transform.rotation = Quaternion.Slerp(mainCamera.transform.rotation, targetRot, Time.deltaTime * smoothSpeed);
-            else
-                mainCamera.transform.rotation = targetRot;
+            targetRot = _activeView.staticAnchor.rotation;
+        }
+        else
+        {
+            Vector3 lookAtTarget = target.TransformPoint(_activeView.lookAtOffset);
+            Vector3 lookDir = lookAtTarget - camTransform.position;
+            targetRot = (lookDir.sqrMagnitude > 0.0001f)
+                ? Quaternion.LookRotation(lookDir)
+                : camTransform.rotation;
+        }
+
+        // 3. Apply Smooth or Instant Update
+        if (smoothSpeed > 0f)
+        {
+            float t = Time.deltaTime * smoothSpeed;
+            camTransform.position = Vector3.Lerp(camTransform.position, targetPos, t);
+            camTransform.rotation = Quaternion.Slerp(camTransform.rotation, targetRot, t);
+        }
+        else
+        {
+            camTransform.position = targetPos;
+            camTransform.rotation = targetRot;
         }
     }
 
@@ -239,17 +254,7 @@ public class MAAgentVisualizer : MonoBehaviour
         if (_activeView.staticAnchor != null)
         {
             mainCamera.transform.position = _activeView.staticAnchor.position;
-
-            if (_agentToDraw != null)
-            {
-                Vector3 lookAtPoint = _agentToDraw.transform.position + _activeView.lookAtOffset;
-                mainCamera.transform.LookAt(lookAtPoint);
-            }
-            else
-            {
-                // Fallback to the anchor's default rotation if no agent is selected
-                mainCamera.transform.rotation = _activeView.staticAnchor.rotation;
-            }
+            mainCamera.transform.rotation = _activeView.staticAnchor.rotation;
         }
     }
 
