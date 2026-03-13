@@ -38,12 +38,6 @@ public class MATCPTunnel : MonoBehaviour
     [Tooltip("Maximum range for Lidar in meters. Should match your Agent's Lidar script.")]
     public float maxLidarDist = 20f;
 
-    [Header("--- Performance ---")]
-    [Tooltip("Render every Nth frame in Build (30 = 1fps visual, 60fps physics)")]
-    public int buildRenderInterval = 30;
-    [Tooltip("Render every Nth frame in Editor (Keep low, e.g., 1 or 2)")]
-    public int editorRenderInterval = 1;
-
     // =================================================================
     //                        NETWORKING STATE
     // =================================================================
@@ -90,9 +84,6 @@ public class MATCPTunnel : MonoBehaviour
         // Framerate Unlocking for headless/fast training
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = -1;
-
-        // Optimize Rendering
-        OnDemandRendering.renderFrameInterval = Application.isEditor ? editorRenderInterval : buildRenderInterval;
     }
 
     private void Start()

@@ -81,7 +81,7 @@ public class MAAgentVisualizer : MonoBehaviour
     private NativeArray<float> _lidarRangesNative;
     private NativeArray<Vector3> _meshVertsNative;
     private NativeArray<Color> _meshColorsNative;
-    private int[] _meshIndices;
+    private NativeArray<int> _meshIndicesNative;
     private int _lidarResolution;
 
     // =================================================================
@@ -134,6 +134,10 @@ public class MAAgentVisualizer : MonoBehaviour
 
         _lidarMesh = new Mesh { name = "LidarLineMesh" };
         _lidarMesh.MarkDynamic();
+
+        // Give the mesh a massive bounding box so it never gets culled
+        _lidarMesh.bounds = new Bounds(Vector3.zero, new Vector3(10000, 10000, 10000));
+
         mf.mesh = _lidarMesh;
     }
 
@@ -151,6 +155,7 @@ public class MAAgentVisualizer : MonoBehaviour
         if (_lidarRangesNative.IsCreated) _lidarRangesNative.Dispose();
         if (_meshVertsNative.IsCreated) _meshVertsNative.Dispose();
         if (_meshColorsNative.IsCreated) _meshColorsNative.Dispose();
+        if (_meshIndicesNative.IsCreated) _meshIndicesNative.Dispose();
     }
 
     private void LateUpdate()
@@ -264,16 +269,12 @@ public class MAAgentVisualizer : MonoBehaviour
 
     private void UpdateLidarMesh()
     {
-        // Check both the master global toggle and the specific Lidar toggle
         bool masterOn = (masterToggle == null || masterToggle.isOn);
         bool lidarOn = (lidarToggle != null) ? lidarToggle.isOn : showLidar;
-
         bool isVisualizing = masterOn && lidarOn;
 
-        // Clear the mesh if visualization is off or missing references
         if (!isVisualizing || _agentToDraw == null || MADataHub.Instance == null)
         {
-            // Only clear if the mesh actually has data to avoid redundant calls
             if (_lidarMesh.vertexCount > 0) _lidarMesh.Clear();
             return;
         }
@@ -281,35 +282,57 @@ public class MAAgentVisualizer : MonoBehaviour
         var db = MADataHub.Instance;
         int idx = _agentToDraw.agentIndex;
 
-        // Reallocate native arrays if the resolution changes at runtime
+        // =========================================================
+        // 1. REALLOCATION & BUFFER SETUP (Only runs on resize)
+        // =========================================================
         if (!_lidarRangesNative.IsCreated || _lidarResolution != db.lidarCount)
         {
             DisposeBuffers();
 
             _lidarResolution = db.lidarCount;
-            _lidarRangesNative = new NativeArray<float>(_lidarResolution, Allocator.Persistent);
-            _meshVertsNative = new NativeArray<Vector3>(_lidarResolution * 2, Allocator.Persistent);
-            _meshColorsNative = new NativeArray<Color>(_lidarResolution * 2, Allocator.Persistent);
+            int vertexCount = _lidarResolution * 2; // 2 verts per line
 
-            // Setup indices for Line topology (0,1, 2,3, 4,5...)
-            _meshIndices = new int[_lidarResolution * 2];
-            for (int i = 0; i < _meshIndices.Length; i++) _meshIndices[i] = i;
+            _lidarRangesNative = new NativeArray<float>(_lidarResolution, Allocator.Persistent);
+            _meshVertsNative = new NativeArray<Vector3>(vertexCount, Allocator.Persistent);
+            _meshColorsNative = new NativeArray<Color>(vertexCount, Allocator.Persistent);
+            _meshIndicesNative = new NativeArray<int>(vertexCount, Allocator.Persistent);
+
+            // Pre-fill indices (0, 1, 2, 3...)
+            for (int i = 0; i < vertexCount; i++) _meshIndicesNative[i] = i;
+
+            // --- UNITY 6 MESH BUFFER SETUP ---
+            // Define the memory layout for the GPU (Position and Color)
+            var layout = new[]
+            {
+                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, 0),
+                new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.Float32, 4, 1)
+            };
+
+            _lidarMesh.SetVertexBufferParams(vertexCount, layout);
+            _lidarMesh.SetIndexBufferParams(vertexCount, IndexFormat.UInt32); // Safe for large meshes
+
+            // Set bounds massively large so we don't have to recalculate them every frame
+            _lidarMesh.bounds = new Bounds(Vector3.zero, new Vector3(10000, 10000, 10000));
+
+            // THE FIX: Define flags early and pass them into SetSubMesh to prevent immediate bounds calculation
+            MeshUpdateFlags flags = MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds;
+            _lidarMesh.SetSubMesh(0, new SubMeshDescriptor(0, vertexCount, MeshTopology.Lines), flags);
         }
 
-        // Align the mesh root with the actual Lidar Sensor, not the Agent root
+        // =========================================================
+        // 2. RUN BURST JOB TO GENERATE VERTS/COLORS
+        // =========================================================
         if (_cachedLidarTransform != null)
         {
             _lidarRenderObj.transform.position = _cachedLidarTransform.position;
             _lidarRenderObj.transform.rotation = _cachedLidarTransform.rotation;
         }
 
-        // Copy managed array data into the native array for Burst Job processing
         _lidarRangesNative.CopyFrom(db.lidarRanges[idx]);
 
         float sAngle = db.lidarMinAngleDeg * Mathf.Deg2Rad;
         float eAngle = db.lidarMaxAngleDeg * Mathf.Deg2Rad;
 
-        // Adjust angles depending on sweep direction
         if (db.lidarScanDirection == MALidarScanDirection.Clockwise)
         {
             sAngle = db.lidarMaxAngleDeg * Mathf.Deg2Rad;
@@ -329,14 +352,19 @@ public class MAAgentVisualizer : MonoBehaviour
             colorFar = new float4(farColor.r, farColor.g, farColor.b, farColor.a)
         };
 
-        // Execute the job on the main thread (fast enough due to Burst)
         meshJob.Run(_lidarResolution);
 
-        // Apply updated data to the Mesh
-        _lidarMesh.SetVertices(_meshVertsNative);
-        _lidarMesh.SetColors(_meshColorsNative);
-        _lidarMesh.SetIndices(_meshIndices, MeshTopology.Lines, 0);
-        _lidarMesh.RecalculateBounds();
+        // =========================================================
+        // 3. APPLY TO MESH ZERO-ALLOCATION (Unity 6)
+        // =========================================================
+
+        // We use the exact same flags here to prevent recalculations on data upload
+        MeshUpdateFlags updateFlags = MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontRecalculateBounds;
+
+        // Push native arrays directly to GPU buffers. 
+        _lidarMesh.SetVertexBufferData(_meshVertsNative, 0, 0, _meshVertsNative.Length, 0, updateFlags);
+        _lidarMesh.SetVertexBufferData(_meshColorsNative, 0, 0, _meshColorsNative.Length, 1, updateFlags);
+        _lidarMesh.SetIndexBufferData(_meshIndicesNative, 0, 0, _meshIndicesNative.Length, updateFlags);
     }
 
     [BurstCompile]
