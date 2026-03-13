@@ -68,9 +68,10 @@ public class MAAgentVisualizer : MonoBehaviour
     // Render & Agent State
     private Material _lineMaterial;
     private MAVehicleController _agentToDraw;
+
     // Cached for performance to avoid GetComponentsInChildren every frame
     private WheelCollider[] _cachedWheels;
-    private Transform _cachedLidarTransform; // NEW: Cache the Lidar position
+    private Transform _cachedLidarTransform; // CACHED: Lidar Sensor Transform
     private int _frameDrawRequest;
 
     // Lidar Mesh State
@@ -171,8 +172,8 @@ public class MAAgentVisualizer : MonoBehaviour
         // Prevents massive framerate drop in rendering loop by avoiding Find/GetComponents
         _cachedWheels = _agentToDraw.GetComponentsInChildren<WheelCollider>();
 
-        // NEW: CACHE THE LIDAR TRANSFORM
-        // Look for the MALIDAR2DSensor component on the agent or its children
+        // CACHE THE LIDAR TRANSFORM
+        // Look for the MALIDAR2DSensor component to get the exact origin and rotation
         var lidarSensor = _agentToDraw.GetComponentInChildren<MALIDAR2DSensor>();
         if (lidarSensor != null)
         {
@@ -180,7 +181,7 @@ public class MAAgentVisualizer : MonoBehaviour
         }
         else
         {
-            // Fallback just in case the sensor is missing, default to agent root
+            // Fallback just in case the sensor is missing
             _cachedLidarTransform = _agentToDraw.transform;
             Debug.LogWarning($"Visualizer: No MALIDAR2DSensor found on agent {_agentToDraw.name}. Lidar mesh will render at agent root.");
         }
@@ -274,7 +275,7 @@ public class MAAgentVisualizer : MonoBehaviour
             for (int i = 0; i < _meshIndices.Length; i++) _meshIndices[i] = i;
         }
 
-        // NEW: Align the mesh root with the actual Lidar Sensor, not the Agent root
+        // Align the mesh root with the actual Lidar Sensor, not the Agent root
         if (_cachedLidarTransform != null)
         {
             _lidarRenderObj.transform.position = _cachedLidarTransform.position;
@@ -342,7 +343,6 @@ public class MAAgentVisualizer : MonoBehaviour
             float angleStep = res > 1 ? (endAngle - startAngle) / (res - 1) : 0f;
             float currentAngle = startAngle + (i * angleStep);
 
-            // FIXED TRIGONOMETRY for Unity: 
             // Sine handles X, Cosine handles Z so that 0 degrees points Forward (+Z)
             float3 dir = new float3(math.cos(currentAngle), 0, math.sin(currentAngle));
 

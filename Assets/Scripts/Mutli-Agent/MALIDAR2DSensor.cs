@@ -78,7 +78,7 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
         float startAngle = _dataHub.lidarMinAngleDeg * Mathf.Deg2Rad;
         float endAngle = _dataHub.lidarMaxAngleDeg * Mathf.Deg2Rad;
 
-        if (_dataHub.lidarScanDirection == MALidarScanDirection.CounterClockwise)
+        if (_dataHub.lidarScanDirection == MALidarScanDirection.Clockwise)
         {
             startAngle = _dataHub.lidarMaxAngleDeg * Mathf.Deg2Rad;
             endAngle = _dataHub.lidarMinAngleDeg * Mathf.Deg2Rad;
