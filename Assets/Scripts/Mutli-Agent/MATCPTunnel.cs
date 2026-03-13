@@ -59,8 +59,6 @@ public class MATCPTunnel : MonoBehaviour
     // =================================================================
     //                          DATA BUFFERS
     // =================================================================
-    // Header: SeqID(4) + Time(4) + DT(4) + AgentCount(4) = 16 bytes
-    private const int GLOBAL_HEADER_SIZE = 16;
     private byte[] sendPayload;
     private byte[] receiveBuffer;
 
@@ -246,8 +244,10 @@ public class MATCPTunnel : MonoBehaviour
             receiveBuffer = new byte[numAgents * 8]; // 2 floats (8 bytes) per agent
 
             // 2. Calculate Payload Size
-            int agentMetaSize = 72;
-            int agentLidarSize = lidarPoints * 2;
+            int GLOBAL_HEADER_SIZE = 36; // Sequence, Time, DT, AgentCount + 5 Lidar variables
+            int agentMetaSize = 76;      // Physics, IMU, Crash, Reward, LidarCount + 1 WheelTicks
+            int agentLidarSize = lidarPoints * 2; // 2 bytes per point (UShort)
+
             int totalSize = GLOBAL_HEADER_SIZE + (numAgents * (agentMetaSize + agentLidarSize));
 
             sendPayload = new byte[totalSize];
@@ -369,16 +369,22 @@ public class MATCPTunnel : MonoBehaviour
 
         try
         {
-            // --- 1. GLOBAL HEADER (16 Bytes) ---
+            // --- 1. GLOBAL HEADER (36 Bytes) ---
             Pack(sequenceId, ref o); sequenceId++;
             Pack(dataHub.timeSinceStart, ref o);
-            Pack(Time.fixedDeltaTime, ref o); // Safer than calling the static TimeStepManager directly
+            Pack(timeStepManager.fixedDeltaTime, ref o);
             Pack(dataHub.numberOfAgents, ref o);
 
-            // --- 2. PER AGENT LOOP ---
+            Pack(dataHub.lidarMinAngleDeg, ref o);
+            Pack(dataHub.lidarMaxAngleDeg, ref o);
+            Pack(dataHub.lidarMinRange, ref o);
+            Pack(dataHub.lidarMaxRange, ref o);
+            Pack((int)dataHub.lidarScanDirection, ref o); // Cast enum/bool to int
+
+            // --- 2. PER AGENT LOOP (76 Bytes Metadata + Lidar Array) ---
             for (int i = 0; i < dataHub.numberOfAgents; i++)
             {
-                // A. Physics & Inputs [6 * 4 bytes]
+                // A. Physics & Inputs [6 floats = 24 bytes]
                 Pack(dataHub.speedMS[i], ref o);
                 Pack(dataHub.throttle[i], ref o);
                 Pack(dataHub.steering[i], ref o);
@@ -386,34 +392,36 @@ public class MATCPTunnel : MonoBehaviour
                 Pack(dataHub.currentWheelRPM[i], ref o);
                 Pack(dataHub.appliedWheelTorque[i], ref o);
 
-                // B. IMU (Euler, LinAccel, AngAccel) [9 * 4 bytes]
+                // B. Wheels [1 int = 4 bytes]
+                Pack(dataHub.wheelTicks[i], ref o);
+
+                // C. IMU Data [9 floats = 36 bytes]
                 PackVec3(dataHub.imuAnglesDeg[i], ref o);
                 PackVec3(dataHub.linAccelMS[i], ref o);
                 PackVec3(dataHub.angAccelDeg[i], ref o);
 
-                // C. Crash data [1 * 4 bytes]
+                // D. Status & Reward [1 int, 1 float = 8 bytes]
                 Pack(dataHub.isCrashed[i] ? 1 : 0, ref o);
 
-                // D. Rewards (Read & Reset Atomically) [1 * 4 bytes]
                 float rewardToSend = 0f;
                 lock (_lock)
                 {
                     rewardToSend = _accumulatedRewards[i];
-                    _accumulatedRewards[i] = 0f; // Reset for next step
+                    _accumulatedRewards[i] = 0f;
                 }
                 Pack(rewardToSend, ref o);
 
-                // E. Lidar [1 * 4 bytes + length * 2 bytes]
+                // E. Lidar Header [1 int = 4 bytes]
                 float[] scan = dataHub.lidarRanges[i];
                 int pointCount = scan != null ? scan.Length : 0;
-                Pack(pointCount, ref o); // Header for lidar count
+                Pack(pointCount, ref o);
 
+                // Dynamic Compression using GLOBAL max range
+                float maxRange = Mathf.Max(dataHub.lidarMaxRange, 0.001f);
                 for (int j = 0; j < pointCount; j++)
                 {
-                    float dist = Mathf.Clamp(scan[j], 0f, maxLidarDist);
-
-                    // Compress to UShort (0-65535)
-                    ushort compressed = (ushort)((dist / maxLidarDist) * 65535);
+                    float dist = Mathf.Clamp(scan[j], 0f, maxRange);
+                    ushort compressed = (ushort)((dist / maxRange) * 65535);
 
                     sendPayload[o] = (byte)(compressed & 0xFF);
                     sendPayload[o + 1] = (byte)(compressed >> 8);
