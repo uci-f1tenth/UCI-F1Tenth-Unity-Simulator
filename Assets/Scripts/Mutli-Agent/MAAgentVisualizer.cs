@@ -42,6 +42,7 @@ public class MAAgentVisualizer : MonoBehaviour
 
     [Header("--- Visuals UI ---")]
     public Toggle masterToggle;
+    public Toggle lidarToggle;
 
     [Header("--- Line Visualization ---")]
     public float velocityScale = 0.5f;
@@ -99,6 +100,16 @@ public class MAAgentVisualizer : MonoBehaviour
         if (cameraViews.Count == 0) cameraViews.Add(new CameraPreset { name = "Default Chase" });
         if (cameraModeNextButton != null) cameraModeNextButton.onClick.AddListener(NextCamera);
         if (cameraModePrevButton != null) cameraModePrevButton.onClick.AddListener(PrevCamera);
+
+        // This ensures the mesh clears immediately when toggled off
+        if (lidarToggle != null)
+        {
+            lidarToggle.isOn = showLidar; // Sync UI state with initial variable
+            lidarToggle.onValueChanged.AddListener(val => {
+                showLidar = val;
+                if (!val) _lidarMesh.Clear();
+            });
+        }
 
         UpdateActiveView();
         InitializeLidarMesh();
@@ -248,12 +259,17 @@ public class MAAgentVisualizer : MonoBehaviour
 
     private void UpdateLidarMesh()
     {
-        bool isVisualizing = (masterToggle == null || masterToggle.isOn) && showLidar;
+        // Check both the master global toggle and the specific Lidar toggle
+        bool masterOn = (masterToggle == null || masterToggle.isOn);
+        bool lidarOn = (lidarToggle != null) ? lidarToggle.isOn : showLidar;
+
+        bool isVisualizing = masterOn && lidarOn;
 
         // Clear the mesh if visualization is off or missing references
         if (!isVisualizing || _agentToDraw == null || MADataHub.Instance == null)
         {
-            _lidarMesh.Clear();
+            // Only clear if the mesh actually has data to avoid redundant calls
+            if (_lidarMesh.vertexCount > 0) _lidarMesh.Clear();
             return;
         }
 

@@ -14078,6 +14078,7 @@ MonoBehaviour:
     lookAtOffset: {x: 0, y: 0, z: 0}
     staticAnchor: {fileID: 1111082243}
   masterToggle: {fileID: 610421776}
+  lidarToggle: {fileID: 437465317}
   velocityScale: 0.5
   accelScale: 0.2
   steeringLineLength: 2
