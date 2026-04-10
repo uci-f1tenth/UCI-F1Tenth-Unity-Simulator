@@ -56,9 +56,6 @@ public class MATCPTunnel : MonoBehaviour
     private byte[] sendPayload;
     private byte[] receiveBuffer;
 
-    // Used to avoid GC allocations during packing
-    private byte[] _tempPackBuffer = new byte[4];
-
     // =================================================================
     //                          THREAD SAFETY
     // =================================================================
@@ -314,6 +311,8 @@ public class MATCPTunnel : MonoBehaviour
                 if (isRunning) Debug.LogWarning($"[TCP] Connection lost or reset: {e.Message}");
             }
         }
+
+        Debug.LogError($"[TCP] Listen Loop Died!");
     }
 
     private void StopServer()

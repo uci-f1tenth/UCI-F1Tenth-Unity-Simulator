@@ -13365,7 +13365,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af2c76e5bf7e60b418e4df8579942476, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  numberOfAgents: 1
+  numberOfAgents: 250
   lidarCount: 270
   lidarUpdateRateHz: 40
   lidarMinAngleDeg: -135
@@ -13409,8 +13409,6 @@ MonoBehaviour:
   connectButton: {fileID: 1300600800}
   buttonLabel: {fileID: 2053822166}
   maxLidarDist: 20
-  buildRenderInterval: 30
-  editorRenderInterval: 1
 --- !u!114 &1838572745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14028,7 +14026,7 @@ Camera:
   m_ShutterSpeed: 0.005
   m_Aperture: 16
   m_FocusDistance: 10
-  m_FocalLength: 50
+  m_FocalLength: 20.78461
   m_BladeCount: 5
   m_Curvature: {x: 2, y: 11}
   m_BarrelClipping: 0.25
@@ -14043,7 +14041,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 40
-  field of view: 60
+  field of view: 60.000004
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
