@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -266,6 +267,26 @@ public class MATCPTunnel : MonoBehaviour
         }
     }
 
+    private async Task SendInitialStateAsync()
+    {
+        // Wait asynchronously
+        await Task.Delay(100);
+
+        try
+        {
+            // Verify we are still connected
+            if (stream != null && stream.CanWrite)
+            {
+                UnityEngine.Debug.Log("[TCP] Time passed. Sending initial state to break deadlock...");
+                SendTelemetry();
+            }
+        }
+        catch (System.Exception e)
+        {
+            UnityEngine.Debug.LogError($"[TCP] Failed to send initial state: {e.Message}");
+        }
+    }
+
     private void ListenLoop()
     {
         while (isRunning)
@@ -279,6 +300,9 @@ public class MATCPTunnel : MonoBehaviour
                 connectedClient.NoDelay = true; // Crucial for low-latency RL
                 stream = connectedClient.GetStream();
                 Debug.Log("[TCP] Client Connected successfully!");
+
+                _ = SendInitialStateAsync(); // The "_ =" tells C# to run this asynchronously in the background
+                Debug.Log("[TCP] Sending first packet to client..."); // Race condition galore!
 
                 while (isRunning && connectedClient.Connected)
                 {

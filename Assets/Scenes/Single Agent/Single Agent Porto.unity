@@ -269,7 +269,7 @@ GameObject:
   - component: {fileID: 112286233}
   - component: {fileID: 112286235}
   - component: {fileID: 112286234}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: RR Wheel Collider
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -1402,7 +1402,7 @@ GameObject:
   - component: {fileID: 308270592}
   - component: {fileID: 308270594}
   - component: {fileID: 308270593}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_32
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -1547,7 +1547,7 @@ GameObject:
   - component: {fileID: 330280119}
   - component: {fileID: 330280121}
   - component: {fileID: 330280120}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_22
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -1613,7 +1613,7 @@ GameObject:
   - component: {fileID: 332283085}
   - component: {fileID: 332283087}
   - component: {fileID: 332283086}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Agent-A Finish Line_1
   m_TagString: Finish Line A
   m_Icon: {fileID: 0}
@@ -1679,7 +1679,7 @@ GameObject:
   - component: {fileID: 340398262}
   - component: {fileID: 340398264}
   - component: {fileID: 340398263}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_24
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -2285,7 +2285,7 @@ GameObject:
   m_Component:
   - component: {fileID: 423602826}
   - component: {fileID: 423602827}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: IMU
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -52645,7 +52645,7 @@ GameObject:
   - component: {fileID: 518292764}
   - component: {fileID: 518292766}
   - component: {fileID: 518292765}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_20
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -52965,7 +52965,7 @@ GameObject:
   - component: {fileID: 580159295}
   - component: {fileID: 580159297}
   - component: {fileID: 580159296}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_29
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -53031,7 +53031,7 @@ GameObject:
   - component: {fileID: 592661980}
   - component: {fileID: 592661982}
   - component: {fileID: 592661981}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_25
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -53097,7 +53097,7 @@ GameObject:
   - component: {fileID: 597389504}
   - component: {fileID: 597389506}
   - component: {fileID: 597389505}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_30
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -54805,7 +54805,7 @@ GameObject:
   - component: {fileID: 736693556}
   - component: {fileID: 736693558}
   - component: {fileID: 736693557}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FL Wheel Collider
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -56211,7 +56211,7 @@ GameObject:
   - component: {fileID: 912047464}
   - component: {fileID: 912047466}
   - component: {fileID: 912047465}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_34
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -56714,7 +56714,7 @@ GameObject:
   - component: {fileID: 1033840993}
   - component: {fileID: 1033840995}
   - component: {fileID: 1033840994}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_26
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -57084,7 +57084,7 @@ GameObject:
   - component: {fileID: 1053482318}
   - component: {fileID: 1053482320}
   - component: {fileID: 1053482319}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_38
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -57500,7 +57500,7 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -58942,7 +58942,7 @@ GameObject:
   - component: {fileID: 1270479655}
   - component: {fileID: 1270479657}
   - component: {fileID: 1270479656}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: RL Wheel Collider
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -59462,7 +59462,7 @@ GameObject:
   - component: {fileID: 1316118547}
   - component: {fileID: 1316118549}
   - component: {fileID: 1316118548}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_35
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -59983,7 +59983,7 @@ GameObject:
   - component: {fileID: 1373994216}
   - component: {fileID: 1373994218}
   - component: {fileID: 1373994217}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_33
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -60126,7 +60126,7 @@ GameObject:
   - component: {fileID: 1395485702}
   - component: {fileID: 1395485701}
   - component: {fileID: 1395485700}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: LIDAR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -60456,7 +60456,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1429359328}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Sensors
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -60492,7 +60492,7 @@ GameObject:
   - component: {fileID: 1431592143}
   - component: {fileID: 1431592145}
   - component: {fileID: 1431592144}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_27
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -60971,7 +60971,7 @@ GameObject:
   - component: {fileID: 1449415405}
   - component: {fileID: 1449415407}
   - component: {fileID: 1449415406}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FR Wheel Collider
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -61388,7 +61388,7 @@ GameObject:
   - component: {fileID: 1501261866}
   - component: {fileID: 1501261868}
   - component: {fileID: 1501261867}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_36
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -61454,7 +61454,7 @@ GameObject:
   - component: {fileID: 1517283676}
   - component: {fileID: 1517283678}
   - component: {fileID: 1517283677}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_21
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -62412,7 +62412,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1710985641}
   - component: {fileID: 1710985642}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Wheel Encoder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -62459,7 +62459,7 @@ GameObject:
   - component: {fileID: 1740247854}
   - component: {fileID: 1740247856}
   - component: {fileID: 1740247855}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_28
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -63338,7 +63338,7 @@ GameObject:
   - component: {fileID: 1884881158}
   - component: {fileID: 1884881160}
   - component: {fileID: 1884881159}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_37
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -63503,7 +63503,7 @@ GameObject:
   - component: {fileID: 1940930557}
   - component: {fileID: 1940930556}
   - component: {fileID: 1940930555}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Main Camera
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -63780,7 +63780,7 @@ GameObject:
   - component: {fileID: 1951350023}
   - component: {fileID: 1951350025}
   - component: {fileID: 1951350024}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_23
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -65089,7 +65089,7 @@ GameObject:
   - component: {fileID: 2076092876}
   - component: {fileID: 2076092878}
   - component: {fileID: 2076092877}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_31
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -65198,7 +65198,7 @@ GameObject:
   - component: {fileID: 6693641342478870472}
   - component: {fileID: 6015145314014850369}
   - component: {fileID: 467636750}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FR Wheel
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -65287,7 +65287,7 @@ GameObject:
   - component: {fileID: 1594770851}
   - component: {fileID: 1594770850}
   - component: {fileID: 919132149621370709}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: F1 Vehicle
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -65325,7 +65325,7 @@ GameObject:
   - component: {fileID: 7153728126784857154}
   - component: {fileID: 8914003598825505871}
   - component: {fileID: 8914003598825505872}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_8
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -65358,7 +65358,7 @@ GameObject:
   - component: {fileID: 8343088577237526765}
   - component: {fileID: 672447290104438313}
   - component: {fileID: 8343088577237526766}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_5
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -65438,7 +65438,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3835367975891201354}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Porto Checkpoints
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -65456,7 +65456,7 @@ GameObject:
   - component: {fileID: 7534256902096731099}
   - component: {fileID: 2338595202541521967}
   - component: {fileID: 7534256902096731100}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_15
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -65671,7 +65671,7 @@ GameObject:
   - component: {fileID: 5795590222446253818}
   - component: {fileID: 721947598796834617}
   - component: {fileID: 5795590222446253819}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_10
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -65925,7 +65925,7 @@ GameObject:
   - component: {fileID: 1034170208438597949}
   - component: {fileID: 5269757453483286190}
   - component: {fileID: 5269757453483286191}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_19
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66044,7 +66044,7 @@ GameObject:
   - component: {fileID: 8536748848794012777}
   - component: {fileID: 7148066945369409222}
   - component: {fileID: 8536748848794012778}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_3
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66154,7 +66154,7 @@ GameObject:
   - component: {fileID: 6161511109407008066}
   - component: {fileID: 1198900287303777225}
   - component: {fileID: 467636751}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: FL Wheel
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -66187,7 +66187,7 @@ GameObject:
   - component: {fileID: 3068872096074452910}
   - component: {fileID: 3139829018805876612}
   - component: {fileID: 4527742105068292496}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_9
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66232,7 +66232,7 @@ GameObject:
   - component: {fileID: 6219476390842446856}
   - component: {fileID: 1657452771718279844}
   - component: {fileID: 6219476390842446857}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Agent-A Finish Line
   m_TagString: Finish Line A
   m_Icon: {fileID: 0}
@@ -66251,7 +66251,7 @@ GameObject:
   - component: {fileID: 838400860238241959}
   - component: {fileID: 5586575135644718766}
   - component: {fileID: 467636748}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: RL Wheel
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -66284,7 +66284,7 @@ GameObject:
   - component: {fileID: 9001504233569388325}
   - component: {fileID: 4180314272526737024}
   - component: {fileID: 9001504233569388326}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_1
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66350,7 +66350,7 @@ GameObject:
   - component: {fileID: 7553149198950867791}
   - component: {fileID: 6413273317716718195}
   - component: {fileID: 7553149198950867792}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_2
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66510,7 +66510,7 @@ GameObject:
   - component: {fileID: 4325639713576927835}
   - component: {fileID: 467636749}
   - component: {fileID: 467636755}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Frame
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -66564,7 +66564,7 @@ GameObject:
   - component: {fileID: 3797822621378451619}
   - component: {fileID: 2714172145966576354}
   - component: {fileID: 467636747}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: RR Wheel
   m_TagString: Agent Tag
   m_Icon: {fileID: 0}
@@ -66582,7 +66582,7 @@ GameObject:
   - component: {fileID: 4469267331617361419}
   - component: {fileID: 3205319635184913485}
   - component: {fileID: 6373409042051777466}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_13
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66686,7 +66686,7 @@ GameObject:
   - component: {fileID: 3918211731348036172}
   - component: {fileID: 3513675296403582705}
   - component: {fileID: 6790409382437386602}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_14
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66716,7 +66716,7 @@ GameObject:
   - component: {fileID: 5204599549556736397}
   - component: {fileID: 8518725067104895441}
   - component: {fileID: 8518725067104895442}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_7
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66734,7 +66734,7 @@ GameObject:
   - component: {fileID: 7071202941104786789}
   - component: {fileID: 1825827348731764626}
   - component: {fileID: 7071202941104786790}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_16
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66905,7 +66905,7 @@ GameObject:
   - component: {fileID: 5640078006944410659}
   - component: {fileID: 7451030879611894118}
   - component: {fileID: 8076493714634514370}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_17
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -66956,7 +66956,7 @@ GameObject:
   - component: {fileID: 2997085889817100491}
   - component: {fileID: 2359332135645810696}
   - component: {fileID: 8320379454103825335}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_12
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -67013,7 +67013,7 @@ GameObject:
   - component: {fileID: 1276577409453090316}
   - component: {fileID: 3526625687871632168}
   - component: {fileID: 8420433234574231463}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_6
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -67103,7 +67103,7 @@ GameObject:
   - component: {fileID: 4782376075910287342}
   - component: {fileID: 3918052369341552462}
   - component: {fileID: 8618156076123304593}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_4
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -67133,7 +67133,7 @@ GameObject:
   - component: {fileID: 8991083385949934242}
   - component: {fileID: 2916703895224564465}
   - component: {fileID: 8991083385949934243}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_18
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
@@ -67151,7 +67151,7 @@ GameObject:
   - component: {fileID: 7361135038104341061}
   - component: {fileID: 8102473170518910079}
   - component: {fileID: 8888638276556437887}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Checkpoint_11
   m_TagString: Checkpoint
   m_Icon: {fileID: 0}
