@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 public class MATimeStepManager : MonoBehaviour
@@ -28,8 +30,13 @@ public class MATimeStepManager : MonoBehaviour
     [Header("--- UI References ---")]
     public TMP_InputField timestepInput;
 
-    // Internal State
+    // --- Internal State ---
+    // Standard synchronous steppers
     private List<ITimeStepper> steppers = new List<ITimeStepper>();
+
+    // Multi-threaded batched steppers (like LIDAR)
+    private List<IBatchedTimeStepper> batchedSteppers = new List<IBatchedTimeStepper>();
+
     private Coroutine heartbeatCoroutine;
 
     private void Awake()
@@ -52,7 +59,7 @@ public class MATimeStepManager : MonoBehaviour
             if (timestepInput != null) timestepInput.text = fixedStepSize.ToString();
         }
 
-        // 2. Find all objects that need stepping (Hub, Agents, etc.)
+        // 2. Find all objects that need stepping (Hub, Agents, Batches, etc.)
         RefreshStepperList();
 
         // 3. Initialize the Physics Engine mode
@@ -136,12 +143,12 @@ public class MATimeStepManager : MonoBehaviour
     public void RefreshStepperList()
     {
         // Expensive operation, only call on Awake or Reset
-        // Finds MADataHub and any other script implementing ITimeStepper
-        steppers = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
-            .OfType<ITimeStepper>()
-            .ToList();
+        var allScripts = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
 
-        Debug.Log($"[TimeStepManager] Registered {steppers.Count} steppers.");
+        steppers = allScripts.OfType<ITimeStepper>().ToList();
+        batchedSteppers = allScripts.OfType<IBatchedTimeStepper>().ToList();
+
+        Debug.Log($"[TimeStepManager] Registered {steppers.Count} standard steppers and {batchedSteppers.Count} batched steppers.");
     }
 
     // Unity's Internal Loop (Runs only if mode == Automatic)
@@ -188,12 +195,50 @@ public class MATimeStepManager : MonoBehaviour
             fixedTime += dt;
         }
 
-        // 2. Notify all listeners (Hub, Agents, Recorders)
+        // --- MULTITHREADING MAGIC BEGINS ---
+
+        int batchCount = batchedSteppers.Count;
+        NativeArray<JobHandle> handles = new NativeArray<JobHandle>(batchCount, Allocator.Temp);
+        int validJobCount = 0;
+
+        // 2. PHASE 1: Schedule Batched Jobs
+        // Blast all the heavy math out to the background CPU worker threads
+        for (int i = 0; i < batchCount; i++)
+        {
+            if (batchedSteppers[i] != null)
+            {
+                handles[validJobCount] = batchedSteppers[i].ScheduleStepJob();
+                validJobCount++;
+            }
+        }
+
+        // 3. Synchronous Operations
+        // WHILE the background threads are doing the heavy lifting, 
+        // we use the Main Thread to do all our standard, cheap operations.
         for (int i = 0; i < steppers.Count; i++)
         {
             if (steppers[i] != null)
             {
                 steppers[i].TimeStep();
+            }
+        }
+
+        // 4. Synchronization Point
+        // Now we stall the Main Thread exactly ONCE to wait for the background jobs to finish.
+        // Because we did standard steppers in step 3, the jobs might already be done!
+        if (validJobCount > 0)
+        {
+            JobHandle.CompleteAll(handles.GetSubArray(0, validJobCount));
+        }
+        handles.Dispose();
+
+        // 5. PHASE 2: Resolve Batched Jobs
+        // Extract the finished data from the NativeArrays
+        for (int i = 0; i < batchCount; i++)
+        {
+            if (batchedSteppers[i] != null)
+            {
+                batchedSteppers[i].ResolveStepData();
             }
         }
     }
