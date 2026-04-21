@@ -17,7 +17,7 @@ public enum MALidarScanDirection
 /// Performs highly optimized raycasts via Burst and writes raw float distances to MADataHub.
 /// Contains ZERO visual or rendering code to maximize training performance.
 /// </summary>
-public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
+public class MALIDAR2DSensor : MonoBehaviour, IBatchedTimeStepper
 {
     [Header("--- Lidar Configuration is Located in Data Hub ---")]
 
@@ -42,9 +42,10 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
     // --- State ---
     private float _nextUpdateTime;
     private int _resolution;
+    private bool _jobScheduledThisFrame; // Tracks if we actually fired the lidar this step
 
     // =================================================================
-    //                      INITIALIZATION
+    //                     INITIALIZATION
     // =================================================================
     void Start()
     {
@@ -102,16 +103,21 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
     }
 
     // =================================================================
-    //                      CORE DATA LOOP
+    //                     CORE DATA LOOP (BATCHED)
     // =================================================================
-    public void TimeStep()
+
+    public JobHandle ScheduleStepJob()
     {
-        if (_dataHub == null || _vehicleController == null) return;
+        if (_dataHub == null || _vehicleController == null) return default;
 
         // Apply realistic update rate (Jitter simulated)
-        if (_dataHub.lidarUpdateRateHz > 0f && _timeManager.fixedTime < _nextUpdateTime) return;
+        if (_dataHub.lidarUpdateRateHz > 0f && _timeManager.fixedTime < _nextUpdateTime)
+        {
+            _jobScheduledThisFrame = false;
+            return default;
+        }
 
-        Profiler.BeginSample("MALidar.TotalScanTime");
+        Profiler.BeginSample("MALidar.ScheduleJob");
 
         int agentIdx = _vehicleController.agentIndex;
         Vector3 origin = transform.position;
@@ -140,21 +146,42 @@ public class MALIDAR2DSensor : MonoBehaviour, ITimeStepper
         };
 
         JobHandle processHandle = processJob.Schedule(_resolution, 64, raycastHandle);
-        processHandle.Complete(); // Must complete now so RL model gets data immediately
 
-        // 4. Bridge Data to Hub
-        NativeArray<float>.Copy(_rangesNative, _rangesManaged, _resolution);
-        _rangesManaged.CopyTo(_dataHub.lidarRanges[agentIdx], 0);
+        _jobScheduledThisFrame = true;
 
         Profiler.EndSample();
 
+        // Return the handle to the manager so it can wait for it
+        return processHandle;
+    }
+
+    public void ResolveStepData()
+    {
+        // If we didn't schedule a job this frame due to update rate, do nothing
+        if (!_jobScheduledThisFrame) return;
+
+        Profiler.BeginSample("MALidar.ResolveData");
+
+        int agentIdx = _vehicleController.agentIndex;
+
+        // 4. Bridge Data to Hub
+        // Because the manager called JobHandle.CompleteAll(), it is 100% safe to read this array now.
+        NativeArray<float>.Copy(_rangesNative, _rangesManaged, _resolution);
+        _rangesManaged.CopyTo(_dataHub.lidarRanges[agentIdx], 0);
+
         // Schedule next scan
         if (_dataHub.lidarUpdateRateHz > 0f)
+        {
             _nextUpdateTime = _timeManager.fixedTime + (1f / _dataHub.lidarUpdateRateHz);
+        }
+
+        _jobScheduledThisFrame = false;
+
+        Profiler.EndSample();
     }
 
     // =================================================================
-    //                      BURST JOBS
+    //                     BURST JOBS
     // =================================================================
     [BurstCompile]
     struct ProcessLidarJob : IJobParallelFor

@@ -13543,8 +13543,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af2c76e5bf7e60b418e4df8579942476, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  numberOfAgents: 256
-  lidarCount: 270
+  numberOfAgents: 64
+  lidarCount: 180
   lidarUpdateRateHz: 40
   lidarMinAngleDeg: -135
   lidarMaxAngleDeg: 135
@@ -14543,7 +14543,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 1
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 1
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0

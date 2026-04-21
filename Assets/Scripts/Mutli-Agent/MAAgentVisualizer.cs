@@ -241,7 +241,7 @@ public class MAAgentVisualizer : MonoBehaviour
         }
 
         // 3. Apply Smooth or Instant Update
-        if (smoothSpeed > 0f)
+        if (smoothSpeed >= 0.01f)
         {
             float t = Time.deltaTime * smoothSpeed;
             camTransform.position = Vector3.Lerp(camTransform.position, targetPos, t);
