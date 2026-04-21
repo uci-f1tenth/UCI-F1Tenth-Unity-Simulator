@@ -16,6 +16,7 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
     public float respawnHeightOffset = -0.1f;
     [Tooltip("If true, crashing sends agent to Start Line. If false, sends to last passed checkpoint.")]
     public bool hardResetToStart = false;
+    public bool randomRespawn = true;
 
     [Header("--- RL Rewards ---")]
     public float checkpointPassReward = 1.0f;
@@ -225,26 +226,46 @@ public class MACheckpointManager : MonoBehaviour, ITimeStepper
     {
         if (agentIndex < 0 || agentIndex >= _lastPassedCheckpointIndices.Length) return;
 
-        // Determine where to respawn
-        int targetCpIndex = hardResetToStart ? 0 : _lastPassedCheckpointIndices[agentIndex];
+        int targetCpIndex;
+
+        // 1. Determine where to respawn
+        if (randomRespawn)
+        {
+            // Pick a completely random checkpoint along the track
+            targetCpIndex = UnityEngine.Random.Range(0, checkpointObjects.Count);
+        }
+        else if (hardResetToStart)
+        {
+            // Force back to the starting line
+            targetCpIndex = 0;
+        }
+        else
+        {
+            // Respawn exactly where they crashed
+            targetCpIndex = _lastPassedCheckpointIndices[agentIndex];
+        }
 
         Transform targetCp = checkpointObjects[targetCpIndex].transform;
 
-        // Physics Reset
+        // 2. Physics Reset
         agentRb.linearVelocity = Vector3.zero;
         agentRb.angularVelocity = Vector3.zero;
         agentRb.Sleep(); // Force sleep to kill any internal physics momentum
 
-        // Position Reset
+        // 3. Position Reset
         agentRb.position = targetCp.position + (Vector3.up * respawnHeightOffset);
         agentRb.rotation = targetCp.rotation;
 
-        // Logic Reset
-        if (hardResetToStart)
+        // 4. Logic Reset
+        // We must update these regardless of how they spawned, so the reward logic doesn't break
+        _lastPassedCheckpointIndices[agentIndex] = targetCpIndex;
+
+        // Bounds
+        _nextCheckpointIndices[agentIndex] = (targetCpIndex + 1) % checkpointObjects.Count;
+
+        if (hardResetToStart || randomRespawn)
         {
-            _lastPassedCheckpointIndices[agentIndex] = 0;
-            _nextCheckpointIndices[agentIndex] = 1;
-            _lapStartTimes[agentIndex] = timeStepManager.fixedTime; // Reset lap timer on crash? Optional.
+            _lapStartTimes[agentIndex] = timeStepManager.fixedTime - 10.0f; // Time penalty to not abuse teleportation
         }
 
         // Prevent immediate "Wrong Checkpoint" penalty if they spawn inside a trigger
